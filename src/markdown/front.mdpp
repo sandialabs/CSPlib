@@ -1,0 +1,17 @@
+# CSPlib - A Software Toolkit for the Analysis of Dynamical Systems and Chemical Kinetic Models
+
+!TOC
+
+!INCLUDE "intro.md", 1
+!INCLUDE "build.md", 1
+!INCLUDE "methodology.md", 1
+!INCLUDE "api.md", 1
+
+## Examples
+!INCLUDE "gODE.md", 1
+!INCLUDE "TChemODE.md", 1
+
+## Summary
+!INCLUDE "summary.md", 1
+## Acknowledgement
+This work is supported as part of the Computational Chemical Sciences Program funded by the U.S. Department of Energy, Office of Science, Basic Energy Sciences, Chemical Sciences, Geosciences and Biosciences Division. Sandia National Laboratories is a multimission laboratory managed and operated by National Technology & Engineering Solutions of Sandia, LLC, a wholly owned subsidiary of Honeywell International Inc., for the U.S. Department of Energy's National Nuclear Security Administration under contract DE-NA0003525.
