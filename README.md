@@ -264,12 +264,13 @@ A typical CSPlib analysis involves the following steps:
 
 ***Model class or interface***
 1.1 Compute : source terms or RHS.
+
 1.2 Compute : Jacobian of RHS.
 1.3 Compute : Rate of progress.
 1.4 Compute : S matrix.
 
 ***Kernel class***
-2.1 Compute : Eigenvalues and eigenvectors
+2.1 Compute : Eigenvalues and eigenvectors.
 2.2 Sort    : Eigenvalues and eigenvaluesvectors.
 2.3 Set     : Matrix whose columns are the CSP basis vectors (right eigenvectors of Jacobian), and its inverse matrix.
 2.4 Compute : Amplitudes of modes.  
