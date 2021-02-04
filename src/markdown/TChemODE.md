@@ -40,16 +40,16 @@ Description:
 We use the following bash script to run this example:
 
  ```bash
- exec=$CSP_INSTALL_PATH/example/index_class/run_index_ODE_TChem.exe
+ exec=@CSP_INSTALL_PATH/example/index_class/run_index_ODE_TChem.exe
  inputs=data/
- chemfile=$inputs"chem.inp"
- thermfile=$inputs"therm.dat"
- inputfile=$inputs"input.dat"
+ chemfile=@inputs"chem.inp"
+ thermfile=@inputs"therm.dat"
+ inputfile=@inputs"input.dat"
  useTChemSolution=true
  prefix=csp_output/
  rtol=1e-6
  atol=1e-10
- $exec --useTChemSolution=$useTChemSolution --chemfile=$chemfile --thermfile=$thermfile --inputfile=$inputfile --rtol=$rtol --atol=$atol --prefix=$prefix
+ @exec --useTChemSolution=@useTChemSolution --chemfile=@chemfile --thermfile=@thermfile --inputfile=@inputfile --rtol=@rtol --atol=@atol --prefix=@prefix
  ```
 
 The inputs are:
@@ -220,20 +220,20 @@ ker.evalModalAmp( );
 
 The time scales for the ODE system is computed by ``ker.evalTau()`` and the data is obtained by ``ker.getTau(tau_vec)`` for one time step. We saved the time scales at every time step in the file "\_tau.dat".  In this file, the number of elements is  the product of $N_{\mathrm{var}}$ and the number of time steps.
 
-![tau M+1](Figures/ODE_GRI/taump.jpg)
+![tau M+1](src/markdown/Figures/ODE_GRI/taump.jpg)
 Figure 5. $\tau_{M+1}$ (blue, right y-axis) and temperature (red, left y-axis) versus time, for the GRI3.0 problem.
 
 The number of exhausted modes $M$ is computed by ``ker.evalM(nElem)`` and we obtained the data with `` ker.getM(NofDM)``. $M$ is saved at every time step in the file ``\_m.dat``.  The number of elements in this file  is equal to number of time steps in the database. The time-profile of $M$ is presented in Figure 6. We also plot the gas temperature on the left $y$-axis for reference and easier interpretation of the analysis results.
 
 
-![Number of exhausted modes](Figures/ODE_GRI/M.jpg)
+![Number of exhausted modes](src/markdown/Figures/ODE_GRI/M.jpg)
 Figure 6. The number of exhausted modes $M$ (blue, right y-axis) and temperature (red, left y-axis), plotted versus time, for the GRI3.0 problem.
 
 
 We plot all time scales against time in Figure 7. Note that $\tau_{\mathrm{rank}}$ is the time scale evaluated at the numerical rank of the Jacobian, the numerical rank is saved in the file "\_jac\_numerical\_rank.dat", and it is computed by ``int jac_rank = ker.computeJacobianNumericalRank()``.  We can use the numerical rank to check which eigenvalues are unreliable/invalid. In this case, all the time scales above the green curve are dominated by numerical noise. Therefore, these time scales should not be considered in the analysis.
 
 
-![tau M+1](Figures/ODE_GRI/timeScales.jpg)
+![tau M+1](src/markdown/Figures/ODE_GRI/timeScales.jpg)
 Figure 7. Time scales versus time for the GRI3.0 problem.
 
 The CSP pointers for all modes were saved in the file "\_cspPointers.dat". The data shows that mode 0 points at $\mathrm{NNH}$, as shown in Figure 8. We produce this file with functions:``ker.evalCSPPointers()`` and``ker.getCSPPointers( cspp_ij )`` as we describe in [api-kernel section](##kernelclass). The amplitude of modes can have negative or positive values. In this figure, we plot the absolute value of the amplitude of mode 0. The absolute amplitude is close to zero in the whole database except near the ignition point. The matrix produced by the ``ker.getCSPPointers( cspp_ij )`` has a size of $N_{\mathrm{var}} \times N_{\mathrm{var}}$, we saved this matrix in the file for each time step, thus the size of this file is the number of time steps times $N_{\mathrm{var}} \times N_{\mathrm{var}}$.  We load this data in the jupyter-notebook and reshape this matrix to further analysis.
@@ -247,7 +247,7 @@ Ptrs = np.reshape(Pointers,[NtimeStep,Nvar,Nvar])
 To find the element position of the variables that each mode points to, we used the python function ``getTopIndex``, which is in the ``CSP_INSTALL_PATH/example/runs/scripts/CSPindexHelper.py`` script.
 
 
-![PointerMode0](Figures/ODE_GRI/Mode0_CSPPointer.jpg)
+![PointerMode0](src/markdown/Figures/ODE_GRI/Mode0_CSPPointer.jpg)
 Figure 8. CSP pointers for mode 0 (right y-axis) and absolute amplitude of mode 0 versus time (left y-axis), for the GRI3.0 problem. Mode 0 points at $\mathrm{NNH}$. The time axis includes a short time-interval around the ignition time.
 
 We can compute the CSP pointers for a given mode using the function ``ker.evalAndGetCSPPointers(cspp_k)`` as we described in [api-kernel section](##kernelclass). In this example, we save the CSP pointer data to the  file ``\_Mode0\_cspPointers.dat`` for the mode 0.
@@ -299,31 +299,31 @@ Pt = np.reshape(PIind,[NtimeStep,Nvar,NtotalReactions])
 
 We plotted the slow/fast Importance indices for temperature and $\mathrm{CO}$ in Figures (9)-(12). The list of reactions in these figures corresponds to the reactions with indices having the first and second highest absolute value. Additionally, we only selected values higher than 1e-2. To obtain these lists of reactions (reaction number in the RoP vector), we used the python function ``getTopIndex``, which is in the ``CSP_INSTALL_PATH/example/runs/scripts/CSPindexHelper.py`` script. We could produce similar plots for all variables for the fast/slow importance indices.
 
-![TempSlowIndex](Figures/ODE_GRI/Temperature[K]_SlowIndex.jpg)
+![TempSlowIndex](src/markdown/Figures/ODE_GRI/Temperature[K]_SlowIndex.jpg)
 Figure 9. Temperature (black, left y-axis), and the Slow importance indices for temperature (right y-axis), versus time, for the GRI3.0 problem. List of reactions corresponds to the top two reactions for each iteration and with index (absolute value) bigger than threshold=1e-2.  
 
-![COSlowIndex](Figures/ODE_GRI/CO_SlowIndex.jpg)
+![COSlowIndex](src/markdown/Figures/ODE_GRI/CO_SlowIndex.jpg)
 Figure 10.  Mass fraction of $\mathrm{CO}$ (black, left y-axis), and the Slow importance indices for $\mathrm{CO}$ (right y-axis), versus time, for the GRI3.0 problem. List of reactions corresponds to the top two reactions for each iteration and with index (absolute value) bigger than threshold=1e-2.  
 
 
-![TempFastIndex](Figures/ODE_GRI/Temperature[K]_FastIndex.jpg)
+![TempFastIndex](src/markdown/Figures/ODE_GRI/Temperature[K]_FastIndex.jpg)
 Figure 11.  Temperature (black, left y-axis), and the Fast importance indices for temperature (right y-axis), versus time, for the GRI3.0 problem. List of reactions corresponds to the top two reactions for each iteration and with index (absolute value) bigger than threshold=1e-2.    
 
 
-![COFastIndex](Figures/ODE_GRI/CO_FastIndex.jpg)
+![COFastIndex](src/markdown/Figures/ODE_GRI/CO_FastIndex.jpg)
 Figure 12.  Mass fraction of $\mathrm{CO}$ (left y-axis), and the Fast importance indices for $\mathrm{CO}$ (right y-axis), versus time, for the GRI3.0 problem. List of reactions corresponds to the top two reactions for each iteration and with index (absolute value) bigger than threshold=1e-2.
 
 We plotted the Participation index of mode 0 in Figure 13. Note that $\mathrm{NNH}$ is involved in three reactions that have a high value of the participation index for mode 0, which is consistent with the CSP pointers for mode 0 that also pointed at this species (see above).
 
 
-![PartIndexMode0](Figures/ODE_GRI/PartIndexM0.jpg)
+![PartIndexMode0](src/markdown/Figures/ODE_GRI/PartIndexM0.jpg)
 Figure 13. Participation index for mode 0 (right y-axis), and amplitude of mode 0 (left y-axis), versus time, for the GRI3.0 problem. List of reactions corresponds to the top two reactions for each iteration and with index (absolute value) bigger than threshold=1e-2. Both axes are in absolute value.
 
 
 As we can see in Figures~(9)--(12), the values of Participation and fast/slow Importance indices are in [-1,1] range. The sum over a point in time in these figure is not always one because we only plot the top reactions. However, the sum over indices of all reactions in absolute value is one. Note that, while the source term and Jacobian of the ODE system evolve smoothly in time, the analysis is always local at each instant in time. Since the eigenvectors are indeterminate up to multiplication by a ($\pm$) constant, and, further, given the step-wise variation of the integer $M$, the various indices can exhibit step changes as seen in these plots.    
 
 
-![TempSlowIndex](Figures/ODE_GRI/Temperature[K]_SlowIndexZoom.jpg)
+![TempSlowIndex](src/markdown/Figures/ODE_GRI/Temperature[K]_SlowIndexZoom.jpg)
 Figure 14. Temperature (black, left y-axis), and absolute value of slow importance index for temperature (right y-axis), versus time, for the GRI3.0 problem. The list of reactions corresponds to the top two reactions for each iteration and with index (absolute value) larger than 1e-2. Zoom in around ignition point.
 
 
@@ -359,10 +359,10 @@ The function ``CSPIndex::getTopIndex`` produces a "std::vector<int>"" with the r
 With these files, the plots in Figures~(15,16) are produced.
 
 
-![CH4SlowIndex](Figures/ODE_GRI/CH4_SlowIndexV2.jpg)
+![CH4SlowIndex](src/markdown/Figures/ODE_GRI/CH4_SlowIndexV2.jpg)
 Figure 15. Mass fraction of $\mathrm{CH_4}$ (black, left y-axis), and absolute value of the slow importance index for $\mathrm{CH_4}$ (right y-axis), versus time, for the GRI3.0 problem. The list of reactions corresponds to the top two reactions for each iteration and with index (absolute value) larger than 1e-2.  
 
-![CH4FastIndex](Figures/ODE_GRI/CH4_FastIndexV2.jpg)
+![CH4FastIndex](src/markdown/Figures/ODE_GRI/CH4_FastIndexV2.jpg)
 Figure 16. Mas fraction of CH$_4$ (black, left y-axis), and the absolute value of the fast importance index for $\mathrm{CH_4}$ (right y-axis), versus time, for the GRI3.0 problem. The list of reactions corresponds to the top two reactions for each iteration and with index (absolute value) larger than 1e-2   
 
 ### CSP Analysis Using the Tines EigenSolver

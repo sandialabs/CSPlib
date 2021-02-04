@@ -14,7 +14,7 @@ CSPlib is an open source software library for analyzing general ordinary differe
 
 ## Citing
 
-* Oscar Diaz-Ibarra, Kyungjoo Kim, Cosmin Safta, and Habib Najm, CSPlib - A Software Toolkit for the Analysis of Dynamical Systems and Chemical Kinetic Models, Sandia National Laboratories, SAND 2020-XXXXX, 2020.*
+* Oscar Diaz-Ibarra, Kyungjoo Kim, Cosmin Safta, and Habib Najm, CSPlib - A Software Toolkit for the Analysis of Dynamical Systems and Chemical Kinetic Models, Sandia National Laboratories, SAND 2021-1212, 2021.*
 
 ## Nomenclature
 
@@ -44,4 +44,4 @@ $\mathcal{R}_r$ |  Rate of progress or reaction $r$
  CSPpointer$_{ij}$ |  CSP pointer for mode $i$ with respect to variable $j$
 $(I^i_r)_{\mathrm{slow}} $|  Slow importance index of reaction $r$ for variable $i$  
 $(I^i_r)_{\mathrm{fast}}$ | Fast importance index of reaction $r$ for variable $i$  
-$P^i_r$ | Participation index of reaction $r$ for mode $i$ 
+$P^i_r$ | Participation index of reaction $r$ for mode $i$

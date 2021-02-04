@@ -50,14 +50,14 @@ Description:
 The following bash script runs a CSP analysis for the DS problem:
 
 ```bash
-exec=$CSP_INSTALL_PATH/example/kernel_class/driver_gODE_Davis_Skodje
+exec=@CSP_INSTALL_PATH/example/kernel_class/driver_gODE_Davis_Skodje
 rtol=1e-4
 atol=1e-14
 y0=2.
 z0=1.
 tend=15.
 nPoints=10000
-$exec --tend=$tend --y0=$y0 --nPoints=$nPoints --z0=$z0 --rtol=$rtol --atol=$atol
+@exec --tend=@tend --y0=@y0 --nPoints=@nPoints --z0=@z0 --rtol=@rtol --atol=@atol
 ```
  The above script and a jupyter-notebook with the below figures is located at ``CSP_INSTALL_PATH/example/runs/Davis_Skodje``.
 
@@ -110,19 +110,19 @@ The example has the following structure:
  ```
 We save data for each time iteration (nPoints), the data correspond to: the number of exhausted modes $M$ ``_m.dat`` (nPoints), the time scales ($2 \times $ nPoints ) ``_tau.dat``, the numerical rank of the Jacobian ($2 \times 2 \times$ nPoints) ``_jac_numerical_rank.dat``, the amplitude of the modes ``_magMode.dat`` ($2 \times $nPoints), the state vector ``_state.dat`` ($2 \times $nPoints ) and time (``_time.dat``).  With these data we produce the following figures:
 
-![Time scales](Figures/Davis_Skodje/timescales.jpg)
+![Time scales](src/markdown/Figures/Davis_Skodje/timescales.jpg)
 Figure 1. A plot of time scales versus time. Red dots correspond to $\tau_{M+1}$, the time scale of the fastest active mode.
 
-![Number of exhausted modes](Figures/Davis_Skodje/M.jpg)
+![Number of exhausted modes](src/markdown/Figures/Davis_Skodje/M.jpg)
 Figure 2. A plot of $(y,z)$ (left axis) and $M$ (right axis) versus time for the DS problem.   
 
-![tau M+1](Figures/Davis_Skodje/tau.jpg)
+![tau M+1](src/markdown/Figures/Davis_Skodje/tau.jpg)
 Figure 3.  A plot of $(y,z)$ (left axis) and $\tau_{M+1}$ (right axis) versus time for the DS problem.
 
-![f0](Figures/Davis_Skodje/f0.jpg)
+![f0](src/markdown/Figures/Davis_Skodje/f0.jpg)
 Figure 4. A plot of $(y,z)$ (left axis) and $f^0$ (right axis) versus time for the DS problem.
 
-![f1](Figures/Davis_Skodje/f1.jpg)
+![f1](src/markdown/Figures/Davis_Skodje/f1.jpg)
 Figure 5. A plot of $(y,z)$ (left axis) and $f^1$ (right axis) versus time for the DS problem.
 
 The CSP analysis reveals characteristics of the DS problem that could not identify from its source term equation. The analysis shows a fast and a slow time scale (see Figure1 ), where the slow time scale is $1e-2$ s, and the fast time scale is $1$ s. From Figure 2, we can notice that between time $0$ s to $1e-1$ s, there are zero exhausted modes ($M$). In this time interval, $\tau_{M+1}$ is equal to the slow time scale (Figure 1), which means the process advance at the slow time scale because all processes are active.  Between  $1e-1$ s and $30 $ s, $M$ changes to 1, in this time interval $\tau_{M+1}$ also changes to the fast time scale. At the end of this period, both curves become constant, $M$ is 2, denoting that the system is in equilibrium. Similarly, the mode amplitude curves in the Figures 4 and 5 display the behavior describe above. The mode amplitude $f_0$ reaches equilibrium at  $1e-1$ s and the mode amplitude $f_1$ reaches equilibrium at $30 $ s $M$.
