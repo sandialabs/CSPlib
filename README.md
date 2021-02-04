@@ -816,7 +816,7 @@ The example has the following structure:
  ```
 We save data for each time iteration (nPoints), the data correspond to: the number of exhausted modes $M$ ``_m.dat`` (nPoints), the time scales ($2 \times $ nPoints ) ``_tau.dat``, the numerical rank of the Jacobian ($2 \times 2 \times$ nPoints) ``_jac_numerical_rank.dat``, the amplitude of the modes ``_magMode.dat`` ($2 \times $nPoints), the state vector ``_state.dat`` ($2 \times $nPoints ) and time (``_time.dat``).  With these data we produce the following figures:
 
-![Time scales](Figures/Davis_Skodje/timescales.jpg)
+![Time scales](src/markdown/Figures/Davis_Skodje/timescales.jpg)
 Figure 1. A plot of time scales versus time. Red dots correspond to $\tau_{M+1}$, the time scale of the fastest active mode.
 
 ![Number of exhausted modes](Figures/Davis_Skodje/M.jpg)
