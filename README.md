@@ -177,7 +177,9 @@ Given the <img src="src/svgs/0d10ba2fee4f8f4e6ec5e91b56e5fdf4.svg?invert_in_dark
 
 
 We order the eigenmodes in terms of decreasing eigenvalue magnitude <img src="src/svgs/90278cf3aec9aa09f22dd88835591efb.svg?invert_in_darkmode" align=middle width=24.19432784999999pt height=24.65753399999998pt/>, Thus in order of decreasing time scales <img src="src/svgs/2a89ae6551cca9ae4bcc0ac5baa81559.svg?invert_in_darkmode" align=middle width=75.20928029999999pt height=24.65753399999998pt/>,
+
 <p align="center"><img src="src/svgs/b918b3e21d7591cfba1f52fb033634fd.svg?invert_in_darkmode" align=middle width=132.8842812pt height=11.327609699999998pt/></p>
+
 so that mode 1 is the fastest mode, mode 2 is the next slower mode, etc.
 
 Typically, chemical kinetic ODE models exhibit a number of fast decaying eigenmodes, associated with eigenvalues having large magnitudes (small timescales) with negative real components. These modes exhibit fast decay towards a slow invariant manifold developed from the equilibration of fast exhausted processes. Typical dynamics in systems that evolve towards an equilibrium involve a gradual increase in the number of fast exhausted modes, as successive time scales are exhausted, and the system approach the equilibrium point.  
@@ -197,6 +199,7 @@ Where <img src="src/svgs/0ad8c52fc0aa98c56df0c369fd8f9d7e.svg?invert_in_darkmode
 In equation [5], <img src="src/svgs/0de9362d747e484498fc1309fa74e9b2.svg?invert_in_darkmode" align=middle width=48.54218159999999pt height=27.77565449999998pt/> is the time scale, and <img src="src/svgs/fd8be73b54f5436a5cd2e73ba9b6bfa9.svg?invert_in_darkmode" align=middle width=9.58908224999999pt height=22.831056599999986pt/> is an eigenvalue.
 
 With the CSP basis vectors we can also compute the CSP pointers. The CSP pointers identify the degree of orthogonality between the dimension of each species in the configuration space and the equation of state constraint developed out of the exhaustion of each of the fast modes [Lam 1993](https://www.tandfonline.com/doi/abs/10.1080/00102209308924120). The pointer for mode <img src="src/svgs/77a3b857d53fb44e33b53e4c8b68351a.svg?invert_in_darkmode" align=middle width=5.663225699999989pt height=21.68300969999999pt/> and species <img src="src/svgs/36b5afebdba34564d884d347484ac0c7.svg?invert_in_darkmode" align=middle width=7.710416999999989pt height=21.68300969999999pt/> is defined as:
+
 <p align="center"><img src="src/svgs/3662ab6d7f00c44123fc913194e2b711.svg?invert_in_darkmode" align=middle width=214.22023919999998pt height=18.58444995pt/></p>
 
 The equations presented above outline the basics of CSP. Detailed mathematical derivations and description of the method are presented in [Lam 1985](https://link.springer.com/chapter/10.1007/978-1-4684-4298-4_1), [Lam 1989](https://www.sciencedirect.com/science/article/pii/S008207848980102X), [Lam 1991](https://link.springer.com/chapter/10.1007/BFb0035372), [Lam 1993](https://www.tandfonline.com/doi/abs/10.1080/00102209308924120). Application of CSP in combustion and other fields are presented in [Trevino  1988](https://www.sciencedirect.com/science/article/pii/S0082078406800196) [Goussis  1992](https://www.sciencedirect.com/science/article/pii/S0082078406800184) [Goussis 1995](https://www.sciencedirect.com/science/article/pii/S0021999196902090) [Ardema 1989](https://www.sciencedirect.com/science/article/pii/S1474667017519503) [Rao 1994](https://arc.aiaa.org/doi/abs/10.2514/6.1995-3262) [Goussis](https://arc.aiaa.org/doi/10.2514/6.1990-644) [Valorani 2001](https://www.sciencedirect.com/science/article/pii/S0021999101967099) [Valorani 2003](https://www.sciencedirect.com/science/article/pii/S0010218003000671) [Valorani 2005](https://www.sciencedirect.com/science/article/pii/S0021999105001981) [Valorani 2006](https://www.sciencedirect.com/science/article/pii/S0010218006001180) [Valorani 2015](https://www.sciencedirect.com/science/article/pii/S0010218015001534) [Malpica 2017](https://www.sciencedirect.com/science/article/pii/S0010218017300652) [Prager 2011](https://www.sciencedirect.com/science/article/pii/S0010218011001039) [Gupta 2013](https://www.sciencedirect.com/science/article/pii/S1540748912003690).  
@@ -215,7 +218,8 @@ where <img src="src/svgs/67f338190db57bac70d43e66e745cbfb.svg?invert_in_darkmode
 
 The <img src="src/svgs/e257acd1ccbe7fcb654708f1a866bfe9.svg?invert_in_darkmode" align=middle width=11.027402099999989pt height=22.465723500000017pt/> matrix is defined by <img src="src/svgs/3f2be1666826f75fc30fbfd90af596ce.svg?invert_in_darkmode" align=middle width=97.74851625pt height=24.65753399999998pt/>, where  <img src="src/svgs/cef39aeb23a61b09d838693a0897fe03.svg?invert_in_darkmode" align=middle width=11.187179849999989pt height=22.465723500000017pt/> is the <img src="src/svgs/bdca802a0997aca54b4ebaa3a14815dd.svg?invert_in_darkmode" align=middle width=73.59776324999999pt height=24.65753399999998pt/> matrix of stoichiometric coefficients. For a constant pressure, homogeneous batch reactor, the <img src="src/svgs/b77af50fec5b904a16ddda8ca577d295.svg?invert_in_darkmode" align=middle width=68.11064369999998pt height=24.65753399999998pt/> matrix <img src="src/svgs/1afcdb0f704394b16fe85fb40c45ca7a.svg?invert_in_darkmode" align=middle width=12.99542474999999pt height=22.465723500000017pt/> is defined by:
 
-<p align="center"><img src="src/svgs/237b1630c045741bb62460bdb17d5ab6.svg?invert_in_darkmode" align=middle width=376.6599012pt height=118.84673790000001pt/></p>
+<p align="center"><img src="src/svgs/8b5e1cd19ef6109ce6b47b4590c02b0d.svg?invert_in_darkmode" align=middle width=376.6599012pt height=118.84673790000001pt/></p>
+
 where <img src="src/svgs/6dec54c48a0438a5fcde6053bdb9d712.svg?invert_in_darkmode" align=middle width=8.49888434999999pt height=14.15524440000002pt/> is density and <img src="src/svgs/64e120bb63546232c0b0ecdffde52aa1.svg?invert_in_darkmode" align=middle width=13.89028244999999pt height=14.15524440000002pt/> is specific heat at constant pressure of the gas mixture, <img src="src/svgs/0a5174be254172c0eab67e56c6c45b6a.svg?invert_in_darkmode" align=middle width=16.73714459999999pt height=22.831056599999986pt/> is the enthalpy of species <img src="src/svgs/63bb9849783d01d91403bc9a5fea12a2.svg?invert_in_darkmode" align=middle width=9.075367949999992pt height=22.831056599999986pt/>, and <img src="src/svgs/b09bc86177601e586d14fb48ca4cb31d.svg?invert_in_darkmode" align=middle width=22.79116289999999pt height=22.465723500000017pt/> is the molar mass of species <img src="src/svgs/63bb9849783d01d91403bc9a5fea12a2.svg?invert_in_darkmode" align=middle width=9.075367949999992pt height=22.831056599999986pt/>.
 
 The rate of progress is defined by <img src="src/svgs/7cc8f272d918f0085a6e839aed6ff8e7.svg?invert_in_darkmode" align=middle width=315.57257489999995pt height=24.65753399999998pt/>. Where <img src="src/svgs/878d4bdfb73bafc0de4fbb3fc749709f.svg?invert_in_darkmode" align=middle width=39.22776164999999pt height=14.15524440000002pt/> and <img src="src/svgs/e97980bc3e9b1b0c68e91c5970823b1b.svg?invert_in_darkmode" align=middle width=36.57360959999999pt height=14.15524440000002pt/> are the forward and reverse rates of progress of reaction <img src="src/svgs/63bb9849783d01d91403bc9a5fea12a2.svg?invert_in_darkmode" align=middle width=9.075367949999992pt height=22.831056599999986pt/>.  
@@ -232,10 +236,15 @@ With the definition of the amplitude of the <img src="src/svgs/4467369d94a3da670
 #### 3.2.1\. CSP Slow Importance Index
 
 The csp representation of the source term in the slow subspace is given by
+
 <p align="center"><img src="src/svgs/e7da7c126821a572252c7b295a6a0742.svg?invert_in_darkmode" align=middle width=373.7538948pt height=49.55270099999999pt/></p>
+
 where
+
 <p align="center"><img src="src/svgs/edc4380262f9e43447964b792fdc58cc.svg?invert_in_darkmode" align=middle width=119.14241460000001pt height=49.424857349999996pt/></p>
+
 and <img src="src/svgs/c827b5520c6658d4abd4a366611dda5c.svg?invert_in_darkmode" align=middle width=131.48421165pt height=27.6567522pt/>. The slow importance index of reaction <img src="src/svgs/63bb9849783d01d91403bc9a5fea12a2.svg?invert_in_darkmode" align=middle width=9.075367949999992pt height=22.831056599999986pt/> with respect to state variable <img src="src/svgs/36b5afebdba34564d884d347484ac0c7.svg?invert_in_darkmode" align=middle width=7.710416999999989pt height=21.68300969999999pt/> is defined as:
+
 <p align="center"><img src="src/svgs/d409de77a3c6c39b91057cb2b7893216.svg?invert_in_darkmode" align=middle width=209.1968505pt height=46.262322149999996pt/></p>
 
 <a name="cspfastimportanceindex"></a>
@@ -243,10 +252,15 @@ and <img src="src/svgs/c827b5520c6658d4abd4a366611dda5c.svg?invert_in_darkmode" 
 #### 3.2.2\. CSP Fast Importance Index
 
 The csp representation of the source term in the fast subspace is given by
+
 <p align="center"><img src="src/svgs/ca45d068ac6a52be2e64ea1791cfebce.svg?invert_in_darkmode" align=middle width=325.21067865pt height=48.3106437pt/></p>
+
 where
+
 <p align="center"><img src="src/svgs/6fd48cccacbca33d14915b733c2492d2.svg?invert_in_darkmode" align=middle width=95.72615909999999pt height=47.806078649999996pt/></p>
+
 with <img src="src/svgs/aaec5fe0aa8f7db438189ddf4db3d8f3.svg?invert_in_darkmode" align=middle width=126.52130204999999pt height=27.6567522pt/>. The fast importance index of reaction <img src="src/svgs/63bb9849783d01d91403bc9a5fea12a2.svg?invert_in_darkmode" align=middle width=9.075367949999992pt height=22.831056599999986pt/> with respect to state variable <img src="src/svgs/36b5afebdba34564d884d347484ac0c7.svg?invert_in_darkmode" align=middle width=7.710416999999989pt height=21.68300969999999pt/> is defined as:
+
 <p align="center"><img src="src/svgs/373ee9c10f6b62d61adeb9721c372c36.svg?invert_in_darkmode" align=middle width=212.25564689999996pt height=46.262322149999996pt/></p>
 
 <a name="cspparticipationindex"></a>
@@ -263,25 +277,25 @@ The Participation Index of the <img src="src/svgs/b37fde2679095443d620f67006a924
 A typical CSPlib analysis involves the following steps:
 
 ***Model class or interface***
-1.1 Compute : source terms or RHS.
 
-1.2 Compute : Jacobian of RHS.
-1.3 Compute : Rate of progress.
-1.4 Compute : S matrix.
++ Compute : source terms or RHS.
++ Compute : Jacobian of RHS.
++ Compute : Rate of progress.
++ Compute : S matrix.
 
 ***Kernel class***
-2.1 Compute : Eigenvalues and eigenvectors.
-2.2 Sort    : Eigenvalues and eigenvaluesvectors.
-2.3 Set     : Matrix whose columns are the CSP basis vectors (right eigenvectors of Jacobian), and its inverse matrix.
-2.4 Compute : Amplitudes of modes.  
-2.5 Compute : Time scales.
-2.6 Compute : Number of exhausted modes.
-2.7 Compute : Compute CSP pointers.
++ Compute : Eigenvalues and eigenvectors.
++ Sort    : Eigenvalues and eigenvaluesvectors.
++ Set     : Matrix whose columns are the CSP basis vectors (right eigenvectors of Jacobian), and its inverse matrix.
++ Compute : Amplitudes of modes.  
++ Compute : Time scales.
++ Compute : Number of exhausted modes.
++ Compute : Compute CSP pointers.
 
 ***Index class***
-3.1 Compute : Participation indices.
-3.2 Compute : Slow Importance indices.
-3.3 Compute : Fast Importance indices.
++ Compute : Participation indices.
++ Compute : Slow Importance indices.
++ Compute : Fast Importance indices.
 
 <a name="modelclass"></a>
 

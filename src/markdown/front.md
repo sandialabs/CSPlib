@@ -177,9 +177,11 @@ Given the $\bm{a}_i$ CSP basis vectors, the associated co-vectors $\bm{b}^i $ ar
 
 
 We order the eigenmodes in terms of decreasing eigenvalue magnitude $|\lambda_i|$, Thus in order of decreasing time scales $\tau_i=1/|\lambda_i|$,
+
 $$
 \tau_1 < \tau_2 < \cdots < \tau_N
 $$
+
 so that mode 1 is the fastest mode, mode 2 is the next slower mode, etc.
 
 Typically, chemical kinetic ODE models exhibit a number of fast decaying eigenmodes, associated with eigenvalues having large magnitudes (small timescales) with negative real components. These modes exhibit fast decay towards a slow invariant manifold developed from the equilibration of fast exhausted processes. Typical dynamics in systems that evolve towards an equilibrium involve a gradual increase in the number of fast exhausted modes, as successive time scales are exhausted, and the system approach the equilibrium point.  
@@ -199,6 +201,7 @@ $$\delta \bm{y}_{error}= \mathrm{tol}_{\mathrm{relative}}|\bm{y}| + \mathrm{tol}
 In equation [5], $\tau=\frac{1}{|\lambda|}$ is the time scale, and $\lambda$ is an eigenvalue.
 
 With the CSP basis vectors we can also compute the CSP pointers. The CSP pointers identify the degree of orthogonality between the dimension of each species in the configuration space and the equation of state constraint developed out of the exhaustion of each of the fast modes [Lam 1993](https://www.tandfonline.com/doi/abs/10.1080/00102209308924120). The pointer for mode $i$ and species $j$ is defined as:
+
 $$
 \mathrm{CSPpointer}_{ij} = a_{ij} b_{ij} \qquad(7).
 $$
@@ -226,7 +229,9 @@ $$Q=
 0     &    \frac{1}{\rho}W_2          &    \cdots   &0 \\
 \vdots            &    \vdots                  &    \vdots   &\vdots \\
 0  &    0          &    \cdots   &\frac{1}{\rho}W_{N_{s}}
- \end{bmatrix}$$
+ \end{bmatrix}
+ $$
+
 where $\rho$ is density and $c_p$ is specific heat at constant pressure of the gas mixture, $h_k$ is the enthalpy of species $k$, and $W_k$ is the molar mass of species $k$.
 
 The rate of progress is defined by $\mathcal{R}_k= [q_{\mathrm{fwd},1}, ..., q_{\mathrm{fwd},N_r}, -q_{\mathrm{rev},1}, ..., -q_{\mathrm{rev},N_r} ]$. Where $q_{\mathrm{fwd},k}$ and $q_{\mathrm{rev},k}$ are the forward and reverse rates of progress of reaction $k$.  
@@ -243,14 +248,19 @@ $$ \beta_k^i = \bm{b}^i \cdot S_k$$
 #### 3.2.1\. CSP Slow Importance Index
 
 The csp representation of the source term in the slow subspace is given by
+
 $$
 g_{\mathrm{slow}} = \sum _{i=M+1}^{N} \bm{a}_i f^i =  \sum _{i=M+1}^{N} \bm{a}_i\sum _{k=1}^{\Re} \beta_k^i \mathcal{R}_k = \sum _{k=1}^{\Re}  \alpha_k \mathcal{R}_k
 $$
+
 where
+
 $$
  \bm{\alpha}_k =  \sum _{i=M+1}^{N} \bm{a}_i \beta_k^i
 $$
+
 and $\bm{\alpha}_k=(\alpha_k^1,\ldots,\alpha_k^N)$. The slow importance index of reaction $k$ with respect to state variable $j$ is defined as:
+
 $$
 (I^j_k)_{\mathrm{slow}} = \frac{\alpha_k^j \mathcal{R}_k}{\sum _{r=1}^{\Re}  | \alpha_r^j \mathcal{R}_r|} \quad (9)
 $$
@@ -260,15 +270,20 @@ $$
 #### 3.2.2\. CSP Fast Importance Index
 
 The csp representation of the source term in the fast subspace is given by
+
 $$
 g_{\mathrm{fast}} = \sum _{i=1}^{M} a_i f^i =  \sum _{i=1}^{M} \bm{a}_i\sum _{k=1}^{\Re} \beta_k^i \mathcal{R}_k  
  =  \sum _{k=1}^{\Re}  \bm{\gamma}_k \mathcal{R}_k
 $$
+
 where
+
 $$
 \bm{\gamma}_k =  \sum _{i=1}^{M} \bm{a}_i \beta_k^i
 $$
+
 with $\bm{\gamma}_k =(\gamma_k^1,\ldots,\gamma_k^N)$. The fast importance index of reaction $k$ with respect to state variable $j$ is defined as:
+
 $$
 (I^j_k)_{\mathrm{fast}} = \frac{\gamma_k^j \mathcal{R}_k}{\sum _{r=1}^{\Re}  | \gamma_r^j \mathcal{R}_r|} \quad (10)
 $$
@@ -287,6 +302,7 @@ $$P^i_k = \frac{\beta_k^i \mathcal{R}_k}{\sum _{r=1}^{\Re} |\beta_r^iR_r|  }\qua
 A typical CSPlib analysis involves the following steps:
 
 ***Model class or interface***
+
 1.1 Compute : source terms or RHS.
 1.2 Compute : Jacobian of RHS.
 1.3 Compute : Rate of progress.
