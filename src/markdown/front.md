@@ -167,6 +167,7 @@ CSP analysis is primarily useful in the context of stiff dynamical systems exhib
 $$\bm{g} = \sum_{i=1}^N\bm{a}_if^i \qquad (1)$$
 
 where $f^i$ is the (signed) "amplitude" of $\bm{g}$ as projected on the basis vector $\bm{b}_i$,
+
 $$ f^i = \bm{b}^i \cdot \bm{g} \qquad (2)$$
 
 where the $\bm{b}^i$ vectors are, by construction, orthonormal to the $\bm{a}_i$ vectors.
