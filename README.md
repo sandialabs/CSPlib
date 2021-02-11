@@ -279,24 +279,24 @@ A typical CSPlib analysis involves the following steps:
 
 ***Model class or interface***
 
-1.1 Compute : source terms or RHS.
-1.2 Compute : Jacobian of RHS.
-1.3 Compute : Rate of progress.
-1.4 Compute : S matrix.
++ Compute : source terms or RHS.
++ Compute : Jacobian of RHS.
++ Compute : Rate of progress.
++ Compute : S matrix.
 
 ***Kernel class***
-2.1 Compute : Eigenvalues and eigenvectors
-2.2 Sort    : Eigenvalues and eigenvaluesvectors.
-2.3 Set     : Matrix whose columns are the CSP basis vectors (right eigenvectors of Jacobian), and its inverse matrix.
-2.4 Compute : Amplitudes of modes.  
-2.5 Compute : Time scales.
-2.6 Compute : Number of exhausted modes.
-2.7 Compute : Compute CSP pointers.
++ Compute : Eigenvalues and eigenvectors.
++ Sort    : Eigenvalues and eigenvaluesvectors.
++ Set     : Matrix whose columns are the CSP basis vectors (right eigenvectors of Jacobian), and its inverse matrix.
++ Compute : Amplitudes of modes.  
++ Compute : Time scales.
++ Compute : Number of exhausted modes.
++ Compute : Compute CSP pointers.
 
 ***Index class***
-3.1 Compute : Participation indices.
-3.2 Compute : Slow Importance indices.
-3.3 Compute : Fast Importance indices.
++ Compute : Participation indices.
++ Compute : Slow Importance indices.
++ Compute : Fast Importance indices.
 
 <a name="modelclass"></a>
 
