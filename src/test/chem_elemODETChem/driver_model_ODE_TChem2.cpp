@@ -3,8 +3,8 @@ CSPlib version 1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
-Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS). 
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains 
+Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
 certain rights in this software.
 
 This file is part of CSPlib. CSPlib is open-source software: you can redistribute it
@@ -58,16 +58,16 @@ int main(int argc, char *argv[]) {
   const bool r_parse = opts.parse(argc, argv);
   if (r_parse) return 0; // print help return
 
-  const char *ch = &(firstname.back());
-  const char t  ='/';
-  if (strcmp(&t,ch)) {
-    struct stat info;
-    if(stat( firstname.c_str(), &info ) != 0)
-    {
-        std::cout <<"Error:: Ouput directory " << firstname << " does not exists\n";
-        exit(1);
-    }
-  }
+  // const char *ch = &(firstname.back());
+  // const char t  ='/';
+  // if (strcmp(&t,ch)) {
+  //   struct stat info;
+  //   if(stat( firstname.c_str(), &info ) != 0)
+  //   {
+  //       std::cout <<"Error:: Ouput directory " << firstname << " does not exists\n";
+  //       exit(1);
+  //   }
+  // }
 
   {
     CSP::ScopeGuard guard(argc, argv);
