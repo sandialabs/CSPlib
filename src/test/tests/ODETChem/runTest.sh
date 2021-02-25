@@ -1,6 +1,6 @@
 
 exec=$CSPlib_INSTALL_PATH/example/index_class/run_index_ODE_TChem.exe
-inputs=data/
+inputs=../data/
 chemfile=$inputs"chem.inp"
 thermfile=$inputs"therm.dat"
 inputfile=$inputs"input.dat"
