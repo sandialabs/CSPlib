@@ -1,4 +1,7 @@
 
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${OPENBLAS_INSTALL_PATH}/lib #lunix 
+export LIBRARY_PATH=${LIBRARY_PATH}:${OPENBLAS_INSTALL_PATH}/lib #mac
+
 exec=$CSPlib_INSTALL_PATH/example/index_class/run_index_ODE_TChem.exe
 inputs=../data/
 chemfile=$inputs"chem.inp"
