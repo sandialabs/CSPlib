@@ -73,7 +73,7 @@ make CC=${MY_CC} FC=${MY_FC} HOSTCC=${MY_CC}
 install_openblas (){
 echo "Installing OpenBLAS:"
 cd ${OPENBLAS_REPOSITORY_PATH}
-make PREFIX=${OPENBLAS_INSTALL_PATH} install
+make CC=${MY_CC} FC=${MY_FC} HOSTCC=${MY_CC} PREFIX=${OPENBLAS_INSTALL_PATH} install
 }
 #=======================================================================================
 
@@ -174,7 +174,7 @@ echo "get TChem:"
 if [ -d "${TCHEM_REPOSITORY_PATH}" ] && [ "$(ls -A ${TCHEM_REPOSITORY_PATH})" ]; then
   echo "${TCHEM_REPOSITORY_PATH} exists and is not empty ... aborting clone"; return
 fi
-git clone https://github.com/sandialabs/TChem         ${TCHEM_REPOSITORY_PATH}
+git clone -b v2.2.0 https://github.com/sandialabs/TChem         ${TCHEM_REPOSITORY_PATH}
 }
 
 build_install_tchem(){
