@@ -147,6 +147,7 @@ cmake \
     -D KOKKOS_INSTALL_PATH="${KOKKOS_INSTALL_PATH}" \
     -D GTEST_INSTALL_PATH="${GTEST_INSTALL_PATH}" \
     -D OPENBLAS_INSTALL_PATH="${OPENBLAS_INSTALL_PATH}" \
+    -D YAML_INSTALL_PATH="${YAML_INSTALL_PATH}" \
     ${TINES_REPOSITORY_PATH}/src
 make ${JFLAG} install
 # if using e.g. yum or apt-get installed openblas, may need this:
@@ -162,7 +163,7 @@ echo "get TChem:"
 if [ -d "${TCHEM_REPOSITORY_PATH}" ] && [ "$(ls -A ${TCHEM_REPOSITORY_PATH})" ]; then
   echo "${TCHEM_REPOSITORY_PATH} exists and is not empty ... aborting clone"; return
 fi
-git clone -b v2.2.0 https://github.com/sandialabs/TChem         ${TCHEM_REPOSITORY_PATH}
+git clone https://github.com/sandialabs/TChem         ${TCHEM_REPOSITORY_PATH}
 }
 
 build_install_tchem(){
@@ -216,6 +217,30 @@ cmake \
     ${CSPlib_REPOSITORY_PATH}/src
 make ${JFLAG} install
 }
+# yaml 
+get_yaml (){
+echo "get gtest:"
+if [ -d "${YAML_REPOSITORY_PATH}" ] && [ "$(ls -A ${YAML_REPOSITORY_PATH})" ]; then
+  echo "${YAML_REPOSITORY_PATH} exists and is not empty ... aborting clone"; return
+fi
+git clone -b yaml-cpp-0.6.3 https://github.com/jbeder/yaml-cpp.git ${YAML_REPOSITORY_PATH}
+}
+
+build_install_yaml(){
+echo "Building gtest:"
+mkdir ${YAML_BUILD_PATH}
+mkdir ${YAML_INSTALL_PATH}
+cd ${YAML_BUILD_PATH}
+cmake \
+    -D CMAKE_INSTALL_PREFIX="${YAML_INSTALL_PATH}" \
+    -D CMAKE_CXX_COMPILER="${MY_CXX}"  \
+    -D CMAKE_C_COMPILER="${MY_CC}" \
+    -D CMAKE_CXX_FLAGS="-g -c" \
+    -D CMAKE_EXE_LINKER_FLAGS="" \
+    -D CMAKE_BUILD_TYPE=RELEASE \
+    ${YAML_REPOSITORY_PATH}
+make ${JFLAG} install
+}
 #=======================================================================================
 #=======================================================================================
 # main
@@ -249,6 +274,12 @@ GTEST_BUILD_PATH=${BUILD_BASE}/gtest
 GTEST_INSTALL_PATH=${INSTALL_BASE}/gtest
 get_gtest
 build_install_gtest
+
+YAML_REPOSITORY_PATH=${REPO_BASE}/yaml
+YAML_BUILD_PATH=${BUILD_BASE}/yaml
+YAML_INSTALL_PATH=${INSTALL_BASE}/yaml
+get_yaml
+build_install_yaml
 
 TINES_REPOSITORY_PATH=${REPO_BASE}/tines
 TINES_BUILD_PATH=${BUILD_BASE}/tines
