@@ -1,5 +1,5 @@
 /* =====================================================================================
-CSPlib version 1.0
+CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
@@ -167,7 +167,7 @@ int getCSPVec(
 
 //-----------------------------------------------------------//
 void evalM(const int &nel);
-void evalMwoExp(const int &nElem,  int &NexM);
+void evalM_WoExp(const int &nElem);
 
 
 //-----------------------------------------------------------//
@@ -254,6 +254,7 @@ int getTSR(
   int computeJacobianNumericalRank();
 
   void evalCSPPointers();
+  void evalAndGetCSPPointersFastSubSpace(std::vector<double>& csp_pointer_fast_space);
 
   void getCSPPointers( std::vector<std::vector<double>> &cspp_ij );
 

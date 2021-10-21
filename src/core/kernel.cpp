@@ -1,10 +1,10 @@
 /* =====================================================================================
-CSPlib version 1.0
+CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
-Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS). 
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains 
+Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
 certain rights in this software.
 
 This file is part of CSPlib. CSPlib is open-source software: you can redistribute it
@@ -418,6 +418,7 @@ void Kernel::ComputeErrVec(
 
 //Set Accuracy:
   if (scalar) {
+    // printf("using relative error %e absolute error %e\n",TolRel, TolAbs );
 //Scalar Error Control
     for (int i=0; i<np; i++) {
       ewt[i] = TolRel * fabs(w[i]) + TolAbs;
@@ -461,8 +462,7 @@ int Kernel::getErrVec( std::vector<double> &Errorvec)
   return 0;
 }
 
-
-void Kernel::evalMwoExp(const int &nElem,  int &NexM)
+void Kernel::evalM_WoExp(const int &nElem)
 {
   // Maximun number of exhausted modes:
   // nElem number of elements constrains, conservation of mass
@@ -501,7 +501,7 @@ void Kernel::evalMwoExp(const int &nElem,  int &NexM)
         M+=1;
         // if I am in the last model quit, because there is not \tau[_nvars+1]
         if (M==_nvars){
-          NexM = std::min(_nvars , MaxExM);
+          _NofDM = std::min(_nvars , MaxExM);
           return;
         }
       }
@@ -511,12 +511,14 @@ void Kernel::evalMwoExp(const int &nElem,  int &NexM)
     for (int i = 0; i < _nvars; i++) { // loop over variables
       double deltaYfast = 0;
       for (size_t r = 0; r < M+1  ; r++) {
-        deltaYfast += _fvec[r]*a[i][r];
+        deltaYfast += _fvec[r] * a[i][r];
       }
 
-      if (std::fabs(deltaYfast)*_tauvec[Mp1]  > _errvec[i]) {
+      if (std::fabs(deltaYfast) * _tauvec[Mp1] > _errvec[i]) {
         //check elements
-        NexM = std::min(exM, MaxExM);
+        _NofDM = std::min(exM, MaxExM);
+        _varM = i;
+        // printf("New M %d var %d\n",_NofDM, _varM );
         return;
       }
 
@@ -525,7 +527,7 @@ void Kernel::evalMwoExp(const int &nElem,  int &NexM)
   }
 
   //check elements
-  NexM = std::min(_nvars , MaxExM);
+  _NofDM = std::min(_nvars , MaxExM);
 
   return;
 
@@ -753,6 +755,23 @@ int Kernel::ComplexToOrthoReal(
 
 int Kernel::sortEigValVec()
 {
+  if( _eig_val_real.empty() ) {
+    std::cout<< __FILE__<<":"<<__func__<<":"<<__LINE__<<":\n"
+             << "\t _eig_val_real is empty.\n";
+  exit(1);
+  }
+
+  if( _eig_val_imag.empty() ) {
+    std::cout<< __FILE__<<":"<<__func__<<":"<<__LINE__<<":\n"
+             << "\t _eig_val_imag is empty.\n";
+  exit(1);
+  }
+
+  if( _eig_vec_R.empty() ) {
+    std::cout<< __FILE__<<":"<<__func__<<":"<<__LINE__<<":\n"
+             << "\t _eig_vec_R is empty.\n";
+  exit(1);
+  }
 
   std::vector<double> eig_val_real_out;
   std::vector<double> eig_val_imag_out;
@@ -968,7 +987,7 @@ int Kernel::computeJacobianNumericalRank()
   std::vector<double> tau(_nvars);
   std::vector<int> jpiv(_nvars);
   int m = _nvars, n=_nvars;
-  int lda = _nvars;
+  // int lda = _nvars;
 
   Tines::QR_WithColumnPivoting_HostTPL(m, n,
 				       &jac1D[0], n, 1,
@@ -1277,6 +1296,20 @@ void Kernel::evalCSPPointers() {
 
 
 
+
+}
+void Kernel::evalAndGetCSPPointersFastSubSpace(std::vector<double>& csp_pointer_fast_space)
+{
+  if (csp_pointer_fast_space.empty()) {
+    csp_pointer_fast_space = std::vector<double>(_nvars,0.0);
+  } else {
+    for (size_t i = 0; i < _nvars; i++)
+      csp_pointer_fast_space[i] = 0.0 ;
+  }
+
+  for (int i=0; i<_nvars; i++)
+    for (int r=0; r<_NofDM; r++)
+      csp_pointer_fast_space[i] += _csp_vec_R[i*_nvars + r ]*_csp_vec_L[i + r*_nvars];
 
 }
 //-----------------------------------------------------------

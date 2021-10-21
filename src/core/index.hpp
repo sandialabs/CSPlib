@@ -1,5 +1,5 @@
 /* =====================================================================================
-CSPlib version 1.0
+CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
@@ -32,7 +32,7 @@ Sandia National Laboratories, Livermore, CA, USA
 #include <math.h>
 //#include "chem_elem_ODE.hpp"
 #include "kernel.hpp"
-
+#include "Tines.hpp"
 /*
 ******************************************************************
    participation index for all modes
@@ -72,12 +72,12 @@ class CSPIndex
   int _M;     // number of exhausted or fast modes
 
   /* Eigen values from the eigen decomposition of Jacobian of source term */
-  std::vector<double> &_eig_val_real;
-  std::vector<double> &_eig_val_imag;
+  std::vector<double> _eig_val_real;
+  std::vector<double> _eig_val_imag;
 
   /* Matrices of Basis vectors */
-  std::vector<std::vector<double> > &_A; // csp basis vector (right)
-  std::vector<std::vector<double> > &_B; // Dual vector of _A (left)
+  std::vector<std::vector<double> > _A; // csp basis vector (right)
+  std::vector<std::vector<double> > _B; // Dual vector of _A (left)
 
   /* Chemical kinetic model related */
   std::vector<std::vector<double> > _Smat;
@@ -92,7 +92,7 @@ class CSPIndex
   std::vector<std::vector<double> > _Islow_jk; // j-th comp. of Nvars (slow modes)
   std::vector<std::vector<double> > _Ifast_jk; // j-th comp. of Nvars (fast modes)
   std::vector<std::vector<double> > _J_ik;
-  std::vector<std::vector<double> > _cspp_ij;
+  // std::vector<std::vector<double> > _cspp_ij;
 
   //TSR related:
   std::vector<double> _Wbar;    // TSR coefficients (caculated in Kernel class)
@@ -104,6 +104,18 @@ class CSPIndex
                                               // to the development of TSR
 
  public:
+   // create class before loop
+  CSPIndex(
+         int Nreac,
+         int Nvar
+        ) :
+         _Nreac(Nreac),
+         _Nvar(Nvar),
+         _Nmode(Nvar)
+          {
+            intVariables();
+          }
+
   CSPIndex(
         int Nreac,
         int Nvar,
@@ -121,7 +133,12 @@ class CSPIndex
         _eig_val_real(eig_val_real),
         _eig_val_imag(eig_val_imag),
         _A(A),
-        _B(B) {}
+        _B(B)
+        {
+          intVariables();
+        }
+
+
   //
   CSPIndex(
         int Nreac,
@@ -145,6 +162,7 @@ class CSPIndex
         _Smat(Smat),
         _RoP(RoP)
          {
+           intVariables();
            evalBeta(); // compute beta
          }
 
@@ -163,8 +181,23 @@ class CSPIndex
       std::vector<double> &RoP
   );
 
+  int initChemKinModel(
+      int M,
+      std::vector<double> &eig_val_real,
+      std::vector<double> &eig_val_imag,
+      std::vector<std::vector<double> > &A,
+      std::vector<std::vector<double> > &B,
+      std::vector<std::vector<double> > &Smat,
+      std::vector<double> &RoP
+  );
+
+  void intVariables();
+
   /* Beta matrix */
   int evalBeta();
+
+
+  void evalBetaV2(std::vector< double > &csp_b, std::vector< double > &smatrix)  ;
 
   int getBeta(std::vector<std::vector<double> > &beta_ik);
 

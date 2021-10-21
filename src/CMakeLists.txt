@@ -20,6 +20,7 @@ ENDIF()
 SET(INSTALL_LIB_DIR     lib    )
 SET(INSTALL_BIN_DIR     bin    )
 SET(INSTALL_INCLUDE_DIR include)
+SET(CSPlib_INSTALL_TEST_PATH    unit-test)
 
 # CSPlib link libraries for tests (tchem and CSPlib are required)
 SET(CSPlib_LINK_LIBRARIES CSPlib)
@@ -27,11 +28,12 @@ SET(CSPlib_LINK_LIBRARIES CSPlib)
 #
 # Options : use CSPlib prefix
 #
-#option(CSPlib_ENABLE_TCHEMPP "overriding flag" OFF)
+OPTION(CSPLIB_MESUARE_WALL_TIME "Flag to save wall times" OFF)
+OPTION(CSPLIB_ENABLE_TEST "Flag to enable unit tests" OFF)
 OPTION(TCHEM_INSTALL_PATH "Path to TChem installation")
 OPTION(KOKKOS_INSTALL_PATH "Path to Kokkos installation")
 OPTION(TINES_INSTALL_PATH "Path to Tines installation")
-
+OPTION(GTEST_INSTALL_PATH "Path to gtest installation")
 SET(HAVE_KOKKOS ${CSPlib_ENABLE_KOKKOS})
 
 # Define configure-related preprocessor macros
@@ -51,6 +53,23 @@ IF (KOKKOS_INSTALL_PATH)
 ELSE()
   # Process submodule Kokkos (includes, cxx flags and lib)
   MESSAGE(FATAL_ERROR "-- KOKKOS_INSTALL_PATH is not provided")
+ENDIF()
+
+
+
+#
+# gtest
+#
+IF (CSPLIB_ENABLE_TEST)
+  IF (GTEST_INSTALL_PATH)
+    # Interface installed gtest
+    MESSAGE("-- CSPlib uses gtest installed at ${GTEST_INSTALL_PATH}")
+    FIND_PACKAGE(Gtest REQUIRED)
+    SET(CSPlib_INTERNAL_TINES_TARGET "GTest::gtest_main")
+  ELSE()
+    MESSAGE(FATAL_ERROR "-- Test is enabled but Gtest install path is not provided")
+  ENDIF()
+  LIST(APPEND CSPlib_LINK_LIBRARIES ${CSPlib_INTERNAL_TINES_TARGET})
 ENDIF()
 
 #
@@ -76,7 +95,7 @@ IF (TCHEM_INSTALL_PATH)
     SET(CSPlib_INTERNAL_TCHEM_TARGET "TChem::tchem")
     SET(CSPlib_ENABLE_TPL_TCHEM ON CACHE BOOL "Enable TChem")
     LIST(APPEND CSPlib_LINK_LIBRARIES ${CSPlib_INTERNAL_TCHEM_TARGET})
-    MESSAGE("-- TChemPP is requested and found")
+    MESSAGE("-- TChem is requested and found")
   ENDIF()
   IF (TCHEM_FOUND)
   ELSE()
@@ -92,6 +111,10 @@ CONFIGURE_FILE (
   )
 INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/CSPlib_ConfigDefs.h
   DESTINATION "${CMAKE_INSTALL_PREFIX}/${CSPlib_INSTALL_INCLUDE_PATH}")
+
+IF (CSPLIB_ENABLE_TEST)
+    ADD_SUBDIRECTORY (unit-test)
+ENDIF()
 
 ADD_SUBDIRECTORY (core)
 ADD_SUBDIRECTORY (test)

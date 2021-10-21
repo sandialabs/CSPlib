@@ -1,5 +1,5 @@
 /* =====================================================================================
-CSPlib version 1.0
+CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
@@ -38,6 +38,7 @@ Sandia National Laboratories, Livermore, CA, USA
 #include <iostream>
 #include <sys/time.h>
 
+#include <fstream>
 
 /// csp configure header
 #include "CSPlib_ConfigDefs.h"
@@ -75,7 +76,7 @@ namespace CSP {
     D2_out = std::vector<std::vector<T> >(nrow);
 
     auto it = D1_in.begin();
-
+    // row-major
     for (size_t i=0; i<nrow; i++) {
       // Both of the following two line should work.
       //D2_out[i].insert(D2_out[i].end(), &D1_in[i*ncol], &D1_in[(i+1)*ncol] );
@@ -134,6 +135,9 @@ namespace CSP {
   void convert_Real_to_Complex_Vector(std::vector<bool> &real_comlex_eigval_flag ,
      std::vector<double> &vec_real,
       std::vector<std::complex<double> > &vec_complex);
+
+
+
 
 }
 

@@ -1,5 +1,5 @@
 /* =====================================================================================
-CSPlib version 1.0
+CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
@@ -104,11 +104,12 @@ namespace CSP {
     template<typename MViewType>
     double computeNormSquared(const MViewType &M) {
       double norm = 0;
+      const auto Blk(_Blk);
       Kokkos::parallel_reduce
 	(Kokkos::RangePolicy<HpT>(0,_N),
 	 KOKKOS_LAMBDA(const int &k, double &update) {
-	  for (int i=0;i<_Blk;++i)
-	    for (int j=0;j<_Blk;++j) {
+	  for (int i=0;i<Blk;++i)
+	    for (int j=0;j<Blk;++j) {
 	      const auto val = Tines::ats<typename MViewType::non_const_value_type>::abs(M(k,i,j));
 	      update += val*val;
 	    }

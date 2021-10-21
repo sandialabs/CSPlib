@@ -1,5 +1,5 @@
 /* =====================================================================================
-CSPlib version 1.0
+CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
@@ -29,10 +29,7 @@ Sandia National Laboratories, Livermore, CA, USA
 #include <fstream>
 #include <cstring>
 
-#include "TChem_Util.hpp"
-#include "TChem_KineticModelData.hpp"
-#include "TChem_PlugFlowReactorRHS.hpp"
-#include "TChem_PlugFlowReactorNumJacobian.hpp"
+#include "TChem.hpp"
 
 using ordinal_type = TChem::ordinal_type;
 using real_type = TChem::real_type;

@@ -1,5 +1,5 @@
 /* =====================================================================================
-CSPlib version 1.0
+CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
@@ -23,6 +23,8 @@ Sandia National Laboratories, Livermore, CA, USA
 #ifndef CSPlib_CONFIG_DEFS_H_
 #define CSPlib_CONFIG_DEFS_H_
 
+#include "Tines_Config.hpp"
+
 /*---- DEFINED IF KOKKOS IS ENABLED. */
 #cmakedefine HAVE_KOKKOS
 
@@ -31,5 +33,10 @@ Sandia National Laboratories, Livermore, CA, USA
 #cmakedefine CSP_ENABLE_TPL_OPENBLAS
 #cmakedefine CSP_ENABLE_TPL_OPENBLAS_CBLAS_HEADER
 #cmakedefine CSP_ENABLE_TPL_LAPACKE
+#cmakedefine CSPLIB_MESUARE_WALL_TIME
+
+#if defined (TINES_ENABLE_TPL_YAML)
+#define CSP_ENABLE_TPL_YAML_CPP
+#endif
 
 #endif

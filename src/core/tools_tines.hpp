@@ -1,5 +1,5 @@
 /* =====================================================================================
-CSPlib version 1.0
+CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
@@ -70,7 +70,7 @@ public:
 			 "CSP::EigendecompositionKokkos:runBatch",
 			 policy,
 			 KOKKOS_LAMBDA(const typename policy_type::member_type& member) {
-			   const ordinal_type i = member.league_rank();
+			   const int i = member.league_rank();
 
 			   const value_type_2d_view jac_at_i =
 			     Kokkos::subview(Jac, i, Kokkos::ALL(), Kokkos::ALL());
@@ -179,7 +179,7 @@ public:
 			   Kokkos::parallel_for(
 						Kokkos::ThreadVectorRange(member, nEqns),
 						[&](const int &j) {
-						  value_type val(0);
+						  double val(0);
 						  for (int k = 0; k < nConstrains; k++) {
 						    val +=  gv(i,k)*vu(k,j);
 						  }
@@ -191,5 +191,94 @@ public:
 
   }
 };
+
+namespace CSP {
+namespace Test {
+static inline bool
+compareFiles(const std::string& filename1, const std::string& filename2)
+{
+std::ifstream f1(filename1);
+std::string s1((std::istreambuf_iterator<char>(f1)),
+               std::istreambuf_iterator<char>());
+std::ifstream f2(filename2);
+std::string s2((std::istreambuf_iterator<char>(f2)),
+               std::istreambuf_iterator<char>());
+return (s1.compare(s2) == 0);
+}
+
+static inline bool
+compareFilesValues(const std::string& filename1, const std::string& filename2)
+{
+using real_type = double;
+
+std::ifstream f1(filename1);
+std::string s1((std::istreambuf_iterator<char>(f1)),
+               std::istreambuf_iterator<char>());
+std::ifstream f2(filename2);
+std::string s2((std::istreambuf_iterator<char>(f2)),
+               std::istreambuf_iterator<char>());
+
+bool passTest(true);
+if (s1.compare(s2) != 0) {
+
+  using ats = Tines::ats<real_type>;
+
+  std::ifstream file1(filename1);
+  std::ifstream file2(filename2);
+  real_type max_relative_error(0);
+  real_type max_absolute_error(0);
+  real_type save_value1(0);
+  real_type save_value2(0);
+
+  if (file1.is_open() && file2.is_open()) {
+    //header
+    std::string line;
+    std::getline(file1, line);
+    std::istringstream iss1(line);
+
+    std::string line2;
+    std::getline(file2, line2);
+    std::istringstream iss2(line2);
+
+    real_type value1, value2, diff;
+    while (file1 >> value1 && file2 >> value2) {
+
+      diff = ats::abs(value1 - value2) ;
+      if (diff > max_absolute_error)
+      {
+        max_absolute_error = diff;
+        max_relative_error = diff/value2;
+        save_value1= value1;
+        save_value2= value2;
+
+      }
+    }
+
+  } else {
+    printf("test : Could not open %s -> Abort !\n", filename1.c_str());
+    printf("test : Could not open %s -> Abort !\n", filename2.c_str());
+    return (false);
+  }
+  printf("Files are not exactly the same \n");
+  printf("Maximum relative error : %15.10e \n", max_relative_error );
+  printf("Maximum absolute error : %15.10e \n", max_absolute_error );
+  printf("Current value :  %15.10e Reference value : %15.10e \n",save_value1 ,save_value2 );
+  const real_type margin = 100, threshold = ats::epsilon() * margin;
+  if ( ats::abs(max_relative_error) < threshold) {
+    printf("PASS with threshold: %15.10e \n", threshold );
+    passTest=true;
+  } else {
+    printf("FAIL with threshold: %15.10e \n", threshold );
+    passTest=false;
+  }
+
+}
+
+return (passTest);
+}
+
+} // end Test
+} // end CSP
+
 
 #endif  //end of header guard

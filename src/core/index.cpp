@@ -1,5 +1,5 @@
 /* =====================================================================================
-CSPlib version 1.0
+CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
@@ -70,6 +70,14 @@ int CSPIndex::initChemKinModel(
   _dRoP = dRoP ;
   _Wbar = Wbar ;
 
+  for (int i=0; i<_Nvar; i++) {
+    for (int k=0; k<_Nreac; k++) {
+      _beta_ik[i][k] = 0;
+      _alpha_jk[i][k] = 0;
+      _gamma_jk[i][k] = 0;
+    }
+  }
+
   evalBeta(); // compute beta
 
   return 0;
@@ -83,10 +91,61 @@ int CSPIndex::initChemKinModel(
   _Smat = Smat ;
   _RoP  = RoP  ;
 
+  for (int i=0; i<_Nvar; i++) {
+    for (int k=0; k<_Nreac; k++) {
+      _beta_ik[i][k] = 0;
+      _alpha_jk[i][k] = 0;
+      _gamma_jk[i][k] = 0;
+    }
+  }
+
   evalBeta(); // compute beta
 
   return 0;
 } // end of initChemKinModel
+
+int CSPIndex::initChemKinModel( int M,
+    std::vector<double> &eig_val_real,
+    std::vector<double> &eig_val_imag,
+    std::vector<std::vector<double> > &A,
+    std::vector<std::vector<double> > &B,
+    std::vector<std::vector<double> > &Smat,
+    std::vector<double> &RoP
+) {
+  _M    = M;
+  _Smat = Smat ;
+  _RoP  = RoP  ;
+  _eig_val_real = eig_val_real;
+  _eig_val_imag = eig_val_imag;
+  _A = A;
+  _B = B;
+
+  // reset matrices to zero
+  for (int i=0; i<_Nvar; i++) {
+    for (int k=0; k<_Nreac; k++) {
+      _beta_ik[i][k]  = 0;
+      _alpha_jk[i][k] = 0;
+      _gamma_jk[i][k] = 0;
+    }
+  }
+
+  evalBeta(); // compute beta
+
+  return 0;
+} // end of initChemKinModel
+
+void CSPIndex::intVariables(){
+
+  _beta_ik  = std::vector<std::vector<double> >(_Nmode, std::vector<double>(_Nreac, 0.0));
+  _alpha_jk = std::vector<std::vector<double> >(_Nvar,  std::vector<double>(_Nreac, 0.0));
+  _gamma_jk = std::vector<std::vector<double> >(_Nvar,  std::vector<double>(_Nreac, 0.0));
+  _P_ik     = std::vector<std::vector<double> >(_Nmode, std::vector<double>(_Nreac));
+  _Islow_jk = std::vector<std::vector<double> >(_Nvar,  std::vector<double>(_Nreac));
+  _Ifast_jk = std::vector<std::vector<double> >(_Nvar,  std::vector<double>(_Nreac));
+  _J_ik     = std::vector<std::vector<double> >(_Nmode, std::vector<double>(_Nreac));
+
+}
+
 
 //-----------------------------------------------------------
 int CSPIndex::evalBeta() {
@@ -98,7 +157,16 @@ int CSPIndex::evalBeta() {
     exit(1);
   }
 
-  _beta_ik = std::vector<std::vector<double> >(_Nmode, std::vector<double>(_Nreac, 0.0));
+  if( _beta_ik.empty() ) {
+    std::cout<< __FILE__<<":"<<__func__<<":"<<__LINE__<<":"
+             << "_beta_ik is empty.\n"
+             << "Call CSPIndex::intVariables to fill out the matrix.\n";
+
+    exit(1);
+  }
+
+
+  // _beta_ik = std::vector<std::vector<double> >(_Nmode, std::vector<double>(_Nreac, 0.0));
 
   for (int i=0; i<_Nmode; i++) {
     for (int k=0; k<_Nreac; k++) {
@@ -109,6 +177,65 @@ int CSPIndex::evalBeta() {
   }
 
   return 0;
+} // end of evalBeta
+
+void CSPIndex::evalBetaV2(std::vector< double > &csp_b, std::vector< double > &smatrix  ) {
+
+  // if( _Smat.empty() ) {
+  //   std::cout<< __FILE__<<":"<<__func__<<":"<<__LINE__<<":"
+  //            << "Matrix for Stoichiometric vectors is empty.\n"
+  //            << "Call CSPIndex::initChemKinModel to fill out the matrix.\n";
+  //   exit(1);
+  // }
+  //
+  // if( _beta_ik.empty() ) {
+  //   std::cout<< __FILE__<<":"<<__func__<<":"<<__LINE__<<":"
+  //            << "_beta_ik is empty.\n"
+  //            << "Call CSPIndex::intVariables to fill out the matrix.\n";
+  //
+  //   exit(1);
+  // }
+
+    std::vector<double> beta(_Nvar*_Nreac);
+
+    {
+      const double one(1), zero(0);
+      const int trans_tag = Tines::Trans::NoTranspose::tag;
+
+      // row-major order
+
+      Tines::Gemm_HostTPL(trans_tag,trans_tag,
+  			_Nvar, _Nreac, _Nvar,
+  			one,
+  			&csp_b[0], _Nvar, 1,
+  			&smatrix[0], _Nreac, 1,
+  			zero,
+  			&beta[0],  _Nreac, 1);
+
+        int count=0;
+        for (size_t k=0; k<_Nvar; k++) {
+          for (size_t j=0; j<_Nreac; j++) {
+            _beta_ik[k][j] =  beta[count];
+            count++;
+          }
+        }
+    }
+
+
+
+
+
+  // _beta_ik = std::vector<std::vector<double> >(_Nmode, std::vector<double>(_Nreac, 0.0));
+
+  // for (int i=0; i<_Nmode; i++) {
+  //   for (int k=0; k<_Nreac; k++) {
+  //     for (int j=0; j<_Nvar; j++) {
+  //       _beta_ik[i][k] += _B[i][j] * _Smat[j][k];
+  //     }
+  //   }
+  // }
+
+  // return 0;
 } // end of evalBeta
 
 //-----------------------------------------------------------
@@ -135,9 +262,16 @@ int CSPIndex::evalAlpha() {
     exit(1);
   }
 
+  if( _alpha_jk.empty() ) {
+    std::cout<< __FILE__<<":"<<__func__<<":"<<__LINE__<<":"
+             << "_alpha_jk is empty.\n"
+             << "Call CSPIndex::intVariables to fill out the matrix.\n";
+    exit(1);
+  }
+
   // evalBeta(); // this will populate private "_beta_ik"
 
-  _alpha_jk = std::vector<std::vector<double> >( _Nvar, std::vector<double>(_Nreac, 0.0));
+  // _alpha_jk = std::vector<std::vector<double> >( _Nvar, std::vector<double>(_Nreac, 0.0));
 
   for (int k=0; k<_Nreac; k++) {
     for (int j=0; j<_Nvar; j++) {
@@ -175,9 +309,17 @@ int CSPIndex::evalGamma() {
     exit(1);
   }
 
+  if( _gamma_jk.empty() ) {
+    std::cout<< __FILE__<<":"<<__func__<<":"<<__LINE__<<":"
+             << "_gamma_jk is empty.\n"
+             << "Call CSPIndex::intVariables to fill out the matrix.\n";
+
+    exit(1);
+  }
+
  // evalBeta(); // this will populate private "_beta_ik"
 
-  _gamma_jk = std::vector<std::vector<double> >( _Nvar, std::vector<double>(_Nreac, 0.0));
+  // _gamma_jk = std::vector<std::vector<double> >( _Nvar, std::vector<double>(_Nreac, 0.0));
 
   for (int k=0; k<_Nreac; k++) {
     for (int j=0; j<_Nvar; j++) {
@@ -228,17 +370,27 @@ int CSPIndex::evalParticipationIndex() {
     exit(1);
   }
 
+  if( _P_ik.empty() ) {
+    std::cout<< __FILE__<<":"<<__func__<<":"<<__LINE__<<":"
+             << "_P_ik is empty.\n"
+             << "Call CSPIndex::intVariables to fill out the matrix.\n";
+
+    exit(1);
+  }
+
   // evalBeta();  // this will populate private data member "_beta_ik"
 
   std::vector<double> deno(_Nmode, 0.0);
+  std::vector<double> ortho_test(_Nmode, 0.0);
+
   for (int i=0; i<_Nmode; i++) {
     for (int k=0; k<_Nreac; k++) {
       deno[i] += fabs( (_beta_ik[i][k] * _RoP[k] ) );
     }
   }
 
-  _P_ik = std::vector<std::vector<double> >(_Nmode, std::vector<double>(_Nreac));
-  std::vector<double> ortho_test(_Nmode, 0.0);
+  // _P_ik = std::vector<std::vector<double> >(_Nmode, std::vector<double>(_Nreac));
+
   for (int i=0; i<_Nmode; i++) {
 
     if (deno[i] != 0) {
@@ -326,6 +478,13 @@ int CSPIndex::evalImportanceIndexSlow() {
              << "Call CSPIndex::initChemKinModel to fill out the matrix.\n";
     exit(1);
   }
+  if( _beta_ik.empty() ) {
+    std::cout<< __FILE__<<":"<<__func__<<":"<<__LINE__<<":"
+             << "_beta_ik is empty.\n"
+             << "Call CSPIndex::intVariables to fill out the matrix.\n";
+
+    exit(1);
+  }
 
   evalAlpha(); // this will populate private 2D data member "_alpha_jk"
 
@@ -336,7 +495,7 @@ int CSPIndex::evalImportanceIndexSlow() {
     }
   }
 
-  _Islow_jk = std::vector<std::vector<double> >(_Nvar, std::vector<double>(_Nreac));
+  // _Islow_jk = std::vector<std::vector<double> >(_Nvar, std::vector<double>(_Nreac));
   std::vector<double> ortho_test(_Nvar, 0.0);
 
   for (int j=0; j<_Nvar; j++) {
@@ -431,6 +590,14 @@ int CSPIndex::evalImportanceIndexFast() {
     exit(1);
   }
 
+  if( _Ifast_jk.empty() ) {
+    std::cout<< __FILE__<<":"<<__func__<<":"<<__LINE__<<":"
+             << "_Ifast_jk is empty.\n"
+             << "Call CSPIndex::intVariables to fill out the matrix.\n";
+
+    exit(1);
+  }
+
   evalGamma(); // this will populate private 2D data member "_gamma_jk"
 
   std::vector<double> deno(_Nmode, 0.0);
@@ -440,7 +607,7 @@ int CSPIndex::evalImportanceIndexFast() {
     }
   }
 
-  _Ifast_jk = std::vector<std::vector<double> >(_Nvar, std::vector<double>(_Nreac));
+  // _Ifast_jk = std::vector<std::vector<double> >(_Nvar, std::vector<double>(_Nreac));
   std::vector<double> ortho_test(_Nvar, 0.0);
 
   for (int j=0; j<_Nvar; j++) {
@@ -535,6 +702,14 @@ int CSPIndex::evalTimeScaleImportanceIndex() {
     exit(1);
   }
 
+  if( _J_ik.empty() ) {
+    std::cout<< __FILE__<<":"<<__func__<<":"<<__LINE__<<":"
+             << "_J_ik is empty.\n"
+             << "Call CSPIndex::intVariables to fill out the matrix.\n";
+
+    exit(1);
+  }
+
   // evalBeta();  // this will populate private 2D data member "_beta_ik"
 
   std::vector< std::vector<double> > dRoP_A(_Nreac, std::vector<double>(_Nmode, 0.0) );
@@ -554,7 +729,7 @@ int CSPIndex::evalTimeScaleImportanceIndex() {
     }
   }
 
-  _J_ik = std::vector<std::vector<double> >(_Nmode, std::vector<double>(_Nreac));
+  // _J_ik = std::vector<std::vector<double> >(_Nmode, std::vector<double>(_Nreac));
 
   for (int i=0; i<_Nmode; i++) {
     for (int k=0; k<_Nreac; k++) {

@@ -1,5 +1,5 @@
 /* =====================================================================================
-CSPlib version 1.0
+CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
@@ -66,6 +66,7 @@ int main(int argc, char *argv[]) {
   std::string firstname("");
   double csp_rtolvar(1.e-2);
   double csp_atolvar(1.e-8);
+  int use_analytical_Jacobian(0);
 
   std::string chemFile(prefixPath + "chem.inp");
   std::string thermFile(prefixPath + "therm.dat");
@@ -86,6 +87,10 @@ int main(int argc, char *argv[]) {
   ("inputfile", "database file name e.g., input.dat", &inputFile);
   opts.set_option<bool>
   ("useTChemSolution", "Use a solution produced by TChem e.g., true", &useTChemSolution);
+  //
+  opts.set_option<int>
+  ("useAnalyticalJacobian",
+   "Use a analytical jacobian; 0: hand-derived analytical jacobian, 1: numerical jacobian, other number: sacado Analytical jacobian  ", &use_analytical_Jacobian);
   opts.set_option<bool>(
       "verbose", "If true, printout state vector, jac ...", &verbose);
 
@@ -135,7 +140,8 @@ int main(int argc, char *argv[]) {
     std::vector<double> source(ndiff_var);
 
     //computes jacobian
-    model.evalJacMatrix(0);
+
+    model.evalJacMatrix(use_analytical_Jacobian);
     std::vector<std::vector<double>> jac (ndiff_var,std::vector<double>(ndiff_var, 0.0) );
 
     //compute Smatrix
@@ -300,6 +306,10 @@ int main(int argc, char *argv[]) {
 
     const int nSample = state_db.size();
 
+    std::string csp_pointer_fast_space_name = firstname + "_cspPointersFastSubSpace.dat";
+    std::vector<double> csp_pointer_fast_space(ndiff_var,0.0);
+    FILE *fout_cspP_fast_subspace = fopen ( (csp_pointer_fast_space_name).c_str(), "w" );
+
     printf("Number of states %d \n",nSample);
 
 
@@ -382,6 +392,8 @@ int main(int argc, char *argv[]) {
       ker.getM(NofDM);
       fprintf(fout," %d \n", NofDM);
 
+      ker.evalAndGetCSPPointersFastSubSpace(csp_pointer_fast_space);
+
     // instantiate CSP Index class
       //===================================================================================================================
 
@@ -434,7 +446,11 @@ int main(int argc, char *argv[]) {
 
 
 
-
+      //
+      for (int j = 0; j<(ndiff_var); j++ ) {
+        fprintf(fout_cspP_fast_subspace,"%15.10e \t", csp_pointer_fast_space[j]);
+      }
+      fprintf(fout_cspP_fast_subspace,"\n");
       // jac
       for (int k = 0; k<ndiff_var; k++ ) {
         for (int j = 0; j<(ndiff_var); j++ ) {
@@ -627,6 +643,7 @@ int main(int argc, char *argv[]) {
     fclose(fout_FastIndch4);
     fclose(fout_SlowIndch4);
     fclose(fout_cspp_mode0);
+    fclose(fout_cspP_fast_subspace);
 
   }
 

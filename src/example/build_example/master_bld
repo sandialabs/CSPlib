@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #=======================================================================================
-# example script to download, build, install, & test: 
+# example script to download, build, install, & test:
 #     openblas, kokkos, gtest, tines, tchem, csplib
 #=======================================================================================
 # User configuration  -- begin
@@ -15,7 +15,7 @@ MY_CC=/usr/bin/gcc
 MY_CXX=/usr/bin/g++
 MY_FC=/usr/bin/gfortran
 JFLAG="-j 4"
-CUDA="OFF" 
+CUDA="OFF"
 
 # will clone repos under REPO_BASE
 # will build under BUILD_BASE
@@ -28,18 +28,6 @@ INSTALL_BASE=${PWD}/install
 
 # User configuration  -- end
 #=======================================================================================
-
-#=======================================================================================
-# CSP test
-
-run_csp_test() {
-echo "  "
-echo "  "
-echo "Runnig one CSPlib test ..."
-cd $CSPlib_INSTALL_PATH"/test/tests/ODETChem/" 
-chmod +x "runTest.sh"
-./"runTest.sh" 
-}
 
 #=======================================================================================
 # OpenBLAS
@@ -223,6 +211,8 @@ cmake \
     -D TCHEM_INSTALL_PATH="${TCHEM_INSTALL_PATH}"\
     -D KOKKOS_INSTALL_PATH="${KOKKOS_INSTALL_PATH}" \
     -D TINES_INSTALL_PATH="${TINES_INSTALL_PATH}" \
+    -D CSPLIB_ENABLE_TEST=ON \
+    -D GTEST_INSTALL_PATH="${GTEST_INSTALL_PATH}" \
     ${CSPlib_REPOSITORY_PATH}/src
 make ${JFLAG} install
 }
@@ -277,9 +267,5 @@ CSPlib_BUILD_PATH=${BUILD_BASE}/csplib
 CSPlib_INSTALL_PATH=${INSTALL_BASE}/csplib
 get_csp
 build_install_csp
-
-export CSPlib_INSTALL_PATH=${CSPlib_INSTALL_PATH}
-export OPENBLAS_INSTALL_PATH=${OPENBLAS_INSTALL_PATH}
-run_csp_test
 
 exit

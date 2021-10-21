@@ -1,0 +1,224 @@
+Number of elements in the mechanism : 6
+-------------------------------------------
+  No.    Name       Mass 
+    1       O     1.600e+01
+    2       H     1.008e+00
+    3       C     1.201e+01
+    4       N     1.401e+01
+    5      AR     3.995e+01
+    6      PT     1.951e+02
+
+Number of species in the mechanism : 53
+-------------------------------------------------------------------
+  No.           Name            Mass        Element content
+                                            O   H   C   N  AR  PT 
+-------------------------------------------------------------------
+    1                  H2     2.016e+00     0   2   0   0   0   0 
+    2                   H     1.008e+00     0   1   0   0   0   0 
+    3                   O     1.600e+01     1   0   0   0   0   0 
+    4                  O2     3.200e+01     2   0   0   0   0   0 
+    5                  OH     1.701e+01     1   1   0   0   0   0 
+    6                 H2O     1.802e+01     1   2   0   0   0   0 
+    7                 HO2     3.301e+01     2   1   0   0   0   0 
+    8                H2O2     3.401e+01     2   2   0   0   0   0 
+    9                   C     1.201e+01     0   0   1   0   0   0 
+   10                  CH     1.302e+01     0   1   1   0   0   0 
+   11                 CH2     1.403e+01     0   2   1   0   0   0 
+   12              CH2(S)     1.403e+01     0   2   1   0   0   0 
+   13                 CH3     1.504e+01     0   3   1   0   0   0 
+   14                 CH4     1.604e+01     0   4   1   0   0   0 
+   15                  CO     2.801e+01     1   0   1   0   0   0 
+   16                 CO2     4.401e+01     2   0   1   0   0   0 
+   17                 HCO     2.902e+01     1   1   1   0   0   0 
+   18                CH2O     3.003e+01     1   2   1   0   0   0 
+   19               CH2OH     3.103e+01     1   3   1   0   0   0 
+   20                CH3O     3.103e+01     1   3   1   0   0   0 
+   21               CH3OH     3.204e+01     1   4   1   0   0   0 
+   22                 C2H     2.503e+01     0   1   2   0   0   0 
+   23                C2H2     2.604e+01     0   2   2   0   0   0 
+   24                C2H3     2.705e+01     0   3   2   0   0   0 
+   25                C2H4     2.805e+01     0   4   2   0   0   0 
+   26                C2H5     2.906e+01     0   5   2   0   0   0 
+   27                C2H6     3.007e+01     0   6   2   0   0   0 
+   28                HCCO     4.103e+01     1   1   2   0   0   0 
+   29               CH2CO     4.204e+01     1   2   2   0   0   0 
+   30               HCCOH     4.204e+01     1   2   2   0   0   0 
+   31                   N     1.401e+01     0   0   0   1   0   0 
+   32                  NH     1.501e+01     0   1   0   1   0   0 
+   33                 NH2     1.602e+01     0   2   0   1   0   0 
+   34                 NH3     1.703e+01     0   3   0   1   0   0 
+   35                 NNH     2.902e+01     0   1   0   2   0   0 
+   36                  NO     3.001e+01     1   0   0   1   0   0 
+   37                 NO2     4.601e+01     2   0   0   1   0   0 
+   38                 N2O     4.401e+01     1   0   0   2   0   0 
+   39                 HNO     3.101e+01     1   1   0   1   0   0 
+   40                  CN     2.602e+01     0   0   1   1   0   0 
+   41                 HCN     2.703e+01     0   1   1   1   0   0 
+   42                H2CN     2.803e+01     0   2   1   1   0   0 
+   43                HCNN     4.103e+01     0   1   1   2   0   0 
+   44                HCNO     4.303e+01     1   1   1   1   0   0 
+   45                HOCN     4.303e+01     1   1   1   1   0   0 
+   46                HNCO     4.303e+01     1   1   1   1   0   0 
+   47                 NCO     4.202e+01     1   0   1   1   0   0 
+   48                  N2     2.801e+01     0   0   0   2   0   0 
+   49                  AR     3.995e+01     0   0   0   0   1   0 
+   50                C3H7     4.309e+01     0   7   3   0   0   0 
+   51                C3H8     4.410e+01     0   8   3   0   0   0 
+   52              CH2CHO     4.305e+01     1   3   2   0   0   0 
+   53              CH3CHO     4.405e+01     1   4   2   0   0   0 
+
+Number of surface species in the mechanism : 11
+-------------------------------------------------------------------
+  No.           Name            Mass        Element content
+                                            O   H   C   N  AR  PT 
+-------------------------------------------------------------------
+    1                _PT_     1.951e+02     0   0   0   0   0   1 
+    2                O_PT     2.111e+02     1   0   0   0   0   1 
+    3              H2O_PT     2.131e+02     1   2   0   0   0   1 
+    4              CO2_PT     2.391e+02     2   0   1   0   0   1 
+    5               CO_PT     2.231e+02     1   0   1   0   0   1 
+    6               OH_PT     2.121e+02     1   1   0   0   0   1 
+    7                H_PT     1.961e+02     0   1   0   0   0   1 
+    8              CH3_PT     2.101e+02     0   3   1   0   0   1 
+    9              CH2_PT     2.091e+02     0   2   1   0   0   1 
+   10               CH_PT     2.081e+02     0   1   1   0   0   1 
+   11                C_PT     2.071e+02     0   0   1   0   0   1 
+
+Number of reactions in the mechanism : 36
+---------------------------------------------------------------------
+Pre-exponential factor and activation energy units : moles & kJoules/mole
+---------------------------------------------------------------------
+   1-> H2 + 2_PT_ => 2H_PT
+    --> STICK
+    --> COV parameters :  _PT_  0.0000e+00  -1.00  -0.0000e+00
+    --> Arrhenius coefficients (forward) :  4.6000e-02   0.00   0.0000e+00
+
+   2-> 2_PT_ + O2 => 2O_PT
+    --> Arrhenius coefficients (forward) :  1.8910e+21  -0.50   0.0000e+00
+
+   3-> CH4 + 2_PT_ => H_PT + CH3_PT
+    --> STICK
+    --> Arrhenius coefficients (forward) :  9.0000e-04   0.00   7.2000e+01
+
+   4-> _PT_ + O_PT + CH4 => OH_PT + CH3_PT
+    --> COV parameters :  O_PT  0.0000e+00   0.00   8.0000e+00
+    --> Arrhenius coefficients (forward) :  5.0000e+18   0.70   4.2000e+01
+
+   5-> CH4 + OH_PT + _PT_ => H2O_PT + CH3_PT
+    --> STICK
+    --> Arrhenius coefficients (forward) :  1.0000e+00   0.00   1.0000e+01
+
+   6-> H2O + _PT_ => H2O_PT
+    --> STICK
+    --> Arrhenius coefficients (forward) :  7.5000e-01   0.00   0.0000e+00
+
+   7-> CO2 + _PT_ => CO2_PT
+    --> STICK
+    --> Arrhenius coefficients (forward) :  5.0000e-03   0.00   0.0000e+00
+
+   8-> CO + _PT_ => CO_PT
+    --> STICK
+    --> Arrhenius coefficients (forward) :  8.4000e-01   0.00   0.0000e+00
+
+   9-> 2H_PT => 2_PT_ + H2
+    --> COV parameters :  H_PT  0.0000e+00   0.00  -1.0000e+01
+    --> Arrhenius coefficients (forward) :  3.7000e+21   0.00   6.7400e+01
+
+  10-> 2O_PT => 2_PT_ + O2
+    --> COV parameters :  O_PT  0.0000e+00   0.00  -1.8828e+02
+    --> Arrhenius coefficients (forward) :  3.7000e+21   0.00   2.3550e+02
+
+  11-> H2O_PT => _PT_ + H2O
+    --> Arrhenius coefficients (forward) :  4.5000e+12   0.00   4.1800e+01
+
+  12-> CO_PT => _PT_ + CO
+    --> COV parameters :  CO_PT  0.0000e+00   0.00  -3.3000e+01
+    --> Arrhenius coefficients (forward) :  1.0000e+15   0.00   1.4600e+02
+
+  13-> CO2_PT => _PT_ + CO2
+    --> Arrhenius coefficients (forward) :  1.0000e+13   0.00   2.7070e+01
+
+  14-> O_PT + C_PT => _PT_ + CO_PT
+    --> Arrhenius coefficients (forward) :  3.7000e+19   0.00   0.0000e+00
+
+  15-> _PT_ + CO_PT => O_PT + C_PT
+    --> COV parameters :  CO_PT  0.0000e+00   0.00  -3.3000e+01
+    --> Arrhenius coefficients (forward) :  3.7000e+19   0.00   2.3650e+02
+
+  16-> O_PT + CO_PT => _PT_ + CO2_PT
+    --> COV parameters :  CO_PT  0.0000e+00   0.00  -3.3000e+01
+    --> Arrhenius coefficients (forward) :  3.7000e+21   0.00   1.1760e+02
+
+  17-> _PT_ + CO2_PT => O_PT + CO_PT
+    --> COV parameters :  O_PT  0.0000e+00   0.00   9.4140e+01
+    --> Arrhenius coefficients (forward) :  3.7000e+19   0.00   1.7330e+02
+
+  18-> OH_PT + CO_PT => H_PT + CO2_PT
+    --> COV parameters :  CO_PT  0.0000e+00   0.00  -3.0000e+01
+    --> Arrhenius coefficients (forward) :  1.0000e+19   0.00   3.8700e+01
+
+  19-> H_PT + CO2_PT => OH_PT + CO_PT
+    --> Arrhenius coefficients (forward) :  1.0000e+19   0.00   8.4000e+00
+
+  20-> _PT_ + CH3_PT => H_PT + CH2_PT
+    --> Arrhenius coefficients (forward) :  1.2620e+22   0.00   7.0300e+01
+
+  21-> H_PT + CH2_PT => _PT_ + CH3_PT
+    --> COV parameters :  H_PT  0.0000e+00   0.00  -2.8000e+00
+    --> Arrhenius coefficients (forward) :  3.0900e+22   0.00   0.0000e+00
+
+  22-> _PT_ + CH2_PT => H_PT + CH_PT
+    --> COV parameters :  C_PT  0.0000e+00   0.00   5.0000e+01
+    --> Arrhenius coefficients (forward) :  7.3140e+22   0.00   5.8900e+01
+
+  23-> H_PT + CH_PT => _PT_ + CH2_PT
+    --> COV parameters :  H_PT  0.0000e+00   0.00  -2.8000e+00
+    --> Arrhenius coefficients (forward) :  3.0900e+22   0.00   0.0000e+00
+
+  24-> _PT_ + CH_PT => H_PT + C_PT
+    --> COV parameters :  H_PT  0.0000e+00   0.00  -2.8000e+00
+    --> Arrhenius coefficients (forward) :  3.0900e+22   0.00   0.0000e+00
+
+  25-> H_PT + C_PT => _PT_ + CH_PT
+    --> Arrhenius coefficients (forward) :  1.2480e+22   0.00   1.3800e+02
+
+  26-> O_PT + H_PT => _PT_ + OH_PT
+    --> Arrhenius coefficients (forward) :  1.2800e+21   0.00   1.1200e+01
+
+  27-> _PT_ + OH_PT => O_PT + H_PT
+    --> COV parameters :  O_PT  0.0000e+00   0.00  -7.3220e+01
+    --> Arrhenius coefficients (forward) :  7.3900e+19   0.00   7.7300e+01
+
+  28-> _PT_ + H2O_PT => OH_PT + H_PT
+    --> COV parameters :  O_PT  0.0000e+00   0.00   1.6736e+02
+    --> Arrhenius coefficients (forward) :  1.1500e+19   0.00   1.0140e+02
+
+  29-> 2OH_PT => O_PT + H2O_PT
+    --> Arrhenius coefficients (forward) :  7.4000e+20   0.00   7.4000e+01
+
+  30-> O_PT + H2O_PT => 2OH_PT
+    --> COV parameters :  O_PT  0.0000e+00   0.00   2.4058e+02
+    --> Arrhenius coefficients (forward) :  1.0000e+20   0.00   4.3100e+01
+
+  31-> H2 + C_PT => CH2_PT
+    --> STICK
+    --> COV parameters :  C_PT  0.0000e+00   0.00   4.6000e+00
+    --> Arrhenius coefficients (forward) :  4.0000e-02   0.00   2.9700e+01
+
+  32-> CH2_PT => C_PT + H2
+    --> COV parameters :  C_PT  0.0000e+00   0.00   5.0000e+01
+    --> Arrhenius coefficients (forward) :  7.6900e+13   0.00   2.5100e+01
+
+  33-> OH_PT + H_PT => _PT_ + H2O_PT
+    --> Arrhenius coefficients (forward) :  2.0400e+21   0.00   6.6220e+01
+
+  34-> H_PT + CH3_PT => 2_PT_ + CH4
+    --> COV parameters :  H_PT  0.0000e+00   0.00  -2.8000e+00
+    --> Arrhenius coefficients (forward) :  3.3000e+21   0.00   5.0000e+01
+
+  35-> H2O_PT + CH3_PT => _PT_ + OH_PT + CH4
+    --> Arrhenius coefficients (forward) :  3.7000e+21   0.00   1.1060e+02
+
+  36-> OH_PT + CH3_PT => _PT_ + O_PT + CH4
+    --> Arrhenius coefficients (forward) :  3.7000e+21   0.00   8.7900e+01
+

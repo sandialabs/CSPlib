@@ -1,5 +1,5 @@
 /* =====================================================================================
-CSPlib version 1.0
+CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
@@ -30,6 +30,21 @@ Sandia National Laboratories, Livermore, CA, USA
 #include <complex>
 #include <cmath>
 #include <iomanip>
+
+
+#if defined(CSPLIB_ENABLE_DEBUG)
+#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
+#define CSPLIB_CHECK_ERROR(err, msg)                                            \
+  if (err)                                                                     \
+    std::logic_error(msg);
+#else
+#define CSPLIB_CHECK_ERROR(err, msg)                                            \
+  if (err)                                                                     \
+    printf("%s\n", msg);
+#endif
+#else
+#define CSPLIB_CHECK_ERROR(err, msg)
+#endif
 
 #if 1
 enum  OutputFormat {
