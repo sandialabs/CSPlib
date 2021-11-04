@@ -3,8 +3,8 @@ CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
-Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS). 
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains 
+Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
 certain rights in this software.
 
 This file is part of CSPlib. CSPlib is open-source software: you can redistribute it
@@ -59,7 +59,7 @@ struct KernelComputation {
     wprt += n_variables * n_variables;
     /// we do not want to touch the given matrix
     member.team_barrier();
-    
+
     Tines::Copy::invoke(member, A, Ac);
     member.team_barrier();
     // B = inv(A)
@@ -219,7 +219,7 @@ evalLeftCSP_BasisVectorsBatch(const std::string& profile_name,
               const real_type_3d_view_type& B,// output : letf CSP basis vectors
               const real_type_2d_view_type& work) // work
 {
-  Kokkos::Profiling::pushRegion(profile_name);
+  Tines::ProfilingRegionScope region(profile_name);
   using policy_type = PolicyType;
 
   Kokkos::parallel_for(
@@ -233,8 +233,6 @@ evalLeftCSP_BasisVectorsBatch(const std::string& profile_name,
      evalLeftCSP_BasisVectors(member, A_at_i, B_at_i, work_at_i);
   });
 
-  Kokkos::Profiling::popRegion();
-
 }
 
 template<typename PolicyType>
@@ -245,7 +243,7 @@ evalCSPPointersBatch(const std::string& profile_name,
               const real_type_3d_view_type& B,// input : letf CSP basis vectors
               const real_type_3d_view_type& CSP_pointers) // output
 {
-  Kokkos::Profiling::pushRegion(profile_name);
+  Tines::ProfilingRegionScope region(profile_name);
   using policy_type = PolicyType;
 
   Kokkos::parallel_for(
@@ -259,8 +257,6 @@ evalCSPPointersBatch(const std::string& profile_name,
      evalCSPPointers(member, A_at_i, B_at_i, CSP_pointers_at_i);
   });
 
-  Kokkos::Profiling::popRegion();
-
 }
 
 template<typename PolicyType>
@@ -271,7 +267,7 @@ evalTimeScalesBatch(const std::string& profile_name,
               const real_type_2d_view_type& eigenvalues_imag_part, //input
               const real_type_2d_view_type& time_scales) // output
 {
-  Kokkos::Profiling::pushRegion(profile_name);
+  Tines::ProfilingRegionScope region(profile_name);
   using policy_type = PolicyType;
 
   Kokkos::parallel_for(
@@ -289,8 +285,6 @@ evalTimeScalesBatch(const std::string& profile_name,
      evalTimeScales(member, eigenvalues_real_part_at_i, eigenvalues_imag_part_at_i, time_scales_at_i);
   });
 
-  Kokkos::Profiling::popRegion();
-
 }
 
 template<typename PolicyType>
@@ -301,7 +295,7 @@ evalModalAmpBatch(const std::string& profile_name,
               const real_type_2d_view_type& rhs,// input
               const real_type_2d_view_type& modal_amplitude) // output
 {
-  Kokkos::Profiling::pushRegion(profile_name);
+  Tines::ProfilingRegionScope region(profile_name);
   using policy_type = PolicyType;
 
   Kokkos::parallel_for(
@@ -315,8 +309,6 @@ evalModalAmpBatch(const std::string& profile_name,
 
      evalModalAmp(member, B_at_i, rhs_at_i, modal_amplitude_at_i);
   });
-
-  Kokkos::Profiling::popRegion();
 
 }
 
@@ -335,7 +327,7 @@ evalMBatch(const std::string& profile_name,
               const real_type_2d_view_type& error_csp, // work
               const ordinal_type_1d_view_type& NofDM) // output
 {
-  Kokkos::Profiling::pushRegion(profile_name);
+  Tines::ProfilingRegionScope region(profile_name);
   using policy_type = PolicyType;
 
   Kokkos::parallel_for(
@@ -356,8 +348,6 @@ evalMBatch(const std::string& profile_name,
                           time_scales_at_i, state_vector_at_i, nElem, rel_tol, abs_tol,
                           error_csp_at_i, NofDM_at_i());
   });
-
-  Kokkos::Profiling::popRegion();
 
 }
 

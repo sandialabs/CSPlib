@@ -3,8 +3,8 @@ CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
-Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
+Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS). 
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains 
 certain rights in this software.
 
 This file is part of CSPlib. CSPlib is open-source software: you can redistribute it
@@ -1312,6 +1312,26 @@ void Kernel::evalAndGetCSPPointersFastSubSpace(std::vector<double>& csp_pointer_
       csp_pointer_fast_space[i] += _csp_vec_R[i*_nvars + r ]*_csp_vec_L[i + r*_nvars];
 
 }
+#if 0
+void Kernel::evalAndGetCSPPointersFastSubSpaceV2(std::vector<double>& csp_pointer_fast_space)
+{
+  if (csp_pointer_fast_space.empty()) {
+    csp_pointer_fast_space = std::vector<double>(_nvars,0.0);
+  }
+
+  double suma (0), suma2(0);
+  for (int i=0; i<_nvars; i++) {
+    suma =0;
+    for (size_t j = 0; j < _nvars; j++) {
+      suma2=0;
+      for (int r=0; r<_NofDM; r++)
+        suma2 += _csp_vec_R[i*_nvars + r ]*_csp_vec_L[j + r*_nvars];
+      suma +=  suma2*suma2
+    } //end loop j
+    csp_pointer_fast_space[i] = std::sqrt(suma);
+  } //end loop i
+}
+#endif
 //-----------------------------------------------------------
 void Kernel::getCSPPointers( std::vector<std::vector<double>> &cspp_ij ) {
 

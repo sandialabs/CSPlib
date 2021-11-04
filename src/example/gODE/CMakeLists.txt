@@ -14,9 +14,17 @@ set ( SRCS  "driver_gODE_Davis_Skodje_K.cpp" )
 add_executable( ${EXEC}  ${SRCS} )
 target_link_libraries( ${EXEC} ${CSPlib_LINK_LIBRARIES} )
 
+set ( EXEC  "driverODE_DavisSkodjeK.exe" )
+set ( SRCS  "driverODE_DavisSkodjeK.cpp" )
+
+add_executable( ${EXEC}  ${SRCS} )
+target_link_libraries( ${EXEC} ${CSPlib_LINK_LIBRARIES} )
+
+
 SET(copy_EXE_FILES
     driver_gODE_Davis_Skodje.exe
     driver_gODE_Davis_Skodje_K.exe
+    driverODE_DavisSkodjeK.exe
    )
 
 INSTALL(TARGETS ${copy_EXE_FILES}

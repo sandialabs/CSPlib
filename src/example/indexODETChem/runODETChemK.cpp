@@ -3,8 +3,8 @@ CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
-Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS). 
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains 
+Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
 certain rights in this software.
 
 This file is part of CSPlib. CSPlib is open-source software: you can redistribute it
@@ -188,6 +188,14 @@ int main(int argc, char *argv[]) {
         count++;
       }
 
+      for (auto const& ifunction : root["Model_class"])
+      {
+        func_inx.insert(std::pair<std::string, ordinal_type>(ifunction.first.as<std::string>() ,count ));
+        vector_size_v.push_back(ifunction.second["vector_size"].as<ordinal_type>());
+        team_size_v.push_back(ifunction.second["team_size"].as<ordinal_type>());
+        count++;
+      }
+
       #else
       printf("This example requires Yaml ...\n" );
       #endif
@@ -195,16 +203,16 @@ int main(int argc, char *argv[]) {
     }
 
 
-    std::string time_file_name = firstname + "_csp_times.dat";
-
-    FILE *fout_times = fopen (time_file_name.c_str(), "w" );
-
+    {
     CSP::ScopeGuard guard(argc, argv);
+    
+    std::string time_file_name = firstname + "_csp_times.dat";
+    FILE *fout_times = fopen (time_file_name.c_str(), "w" );
 
     const auto exec_space_instance = TChem::exec_space();
 
 
-    Kokkos::Impl::Timer timer;
+    Kokkos::Timer timer;
 
     fprintf(fout_times, "{\n");
     fprintf(fout_times, " \"Model Class\": \n {\n");
@@ -227,7 +235,7 @@ int main(int argc, char *argv[]) {
       t_read_state = timer.seconds();
       fprintf(fout_times, "%s: %20.14e, \n","\"Read state vector\"", t_read_state);
 
-    } else{
+    } else {
       // read a data base that was not produced by TChem
       std::vector<std::vector <double> > state_db_read;
       // Density, pressure, temperature and species mass fraction
@@ -258,8 +266,9 @@ int main(int argc, char *argv[]) {
     }
 
     //computes RHS
+    SET_TEAM_VECTOR_SIZE("evalSourceVector")
     timer.reset();
-    model.evalSourceVector();
+    model.evalSourceVectorDevice(team_size, vector_size);
     exec_space_instance.fence();
     const real_type t_eval_source = timer.seconds();
     fprintf(fout_times, "%s: %20.14e, \n","\"Eval source term\"", t_eval_source);
@@ -277,8 +286,9 @@ int main(int argc, char *argv[]) {
     fprintf(fout_times, "%s: %20.14e, \n","\"Eval Jacobian\"", t_eval_jacobian);
 
     //compute Smatrix
+    SET_TEAM_VECTOR_SIZE("evalSmatrix")
     timer.reset();
-    model.evalSmatrix();
+    model.evalSmatrix(team_size, vector_size);
     exec_space_instance.fence();
     const real_type t_eval_smatrix = timer.seconds();
     fprintf(fout_times, "%s: %20.14e, \n","\"Eval S matrix\"", t_eval_smatrix );
@@ -288,11 +298,10 @@ int main(int argc, char *argv[]) {
     // if a reaction is irreversible one rate is set to zero
     const auto nTotalReactions = 2*nReactions;
 
-
-
     // compute rate of progress
+    SET_TEAM_VECTOR_SIZE("evalRoP")
     timer.reset();
-    model.evalRoP();
+    model.evalRoP(team_size, vector_size);
     exec_space_instance.fence();
     const real_type t_eval_rop = timer.seconds();
     fprintf(fout_times, "%s: %20.14e, \n","\"Eval rate of progress\"", t_eval_rop);
@@ -691,6 +700,8 @@ int main(int argc, char *argv[]) {
     fprintf(fout_times, "%s: %20.14e \n ","\"Write files\"", t_write_files);
     fprintf(fout_times, "} \n ");// end file
     fclose(fout_times);
+
+    }
 
 
   }

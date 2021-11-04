@@ -3,8 +3,8 @@ CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
-Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS). 
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains 
+Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
 certain rights in this software.
 
 This file is part of CSPlib. CSPlib is open-source software: you can redistribute it
@@ -109,7 +109,8 @@ class ChemElemODETChem : public Model
   int NumOfReactions();
   void getSpeciesNames(std::vector<std::string>& spec_name);
 
-  void evalRoP();
+  void evalRoP(const ordinal_type& team_size=-1,
+               const ordinal_type& vector_size=-1);
 
   // make a copy of state vector(Device) and convert to std::vector
   void getStateVector(std::vector<std::vector <double> >& state_db);
@@ -131,8 +132,13 @@ class ChemElemODETChem : public Model
   void getSourceVectorDevice(real_type_2d_view& rhs);
 
   int evalSourceVector();
+  
+  // model class does not all add new inputs because of virtual function
+  void evalSourceVectorDevice(const ordinal_type& team_size=-1,
+                              const ordinal_type& vector_size=-1);
 
-  void evalSmatrix();
+  void evalSmatrix(const ordinal_type& team_size=-1,
+                   const ordinal_type& vector_size=-1);
 
   int evalJacMatrix(unsigned int useJacAnl);
 

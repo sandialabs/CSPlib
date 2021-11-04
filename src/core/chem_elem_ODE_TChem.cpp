@@ -3,8 +3,8 @@ CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
-Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS). 
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains 
+Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
 certain rights in this software.
 
 This file is part of CSPlib. CSPlib is open-source software: you can redistribute it
@@ -31,9 +31,6 @@ ChemElemODETChem::ChemElemODETChem(
                 const std::string &thermo_gas_file    )
 
 {
-
-
-
     _nBatch = 1;
     const bool detail = false;
     TChem::     exec_space::print_configuration(std::cout, detail);
@@ -104,6 +101,8 @@ void ChemElemODETChem::run_on_host(const bool & run_on_host){
 void ChemElemODETChem::readIgnitionZeroDDataBaseFromFile(const std::string& filename,
                                                   std::vector<std::string> &varnames,  const ordinal_type &increment)
    {
+
+  Tines::ProfilingRegionScope region("CSPlib::readIgnitionZeroDDataBaseFromFile");
 
 
   //read a solution from the TChem's Constant pressure ignition Zero D rector:
@@ -222,6 +221,7 @@ void ChemElemODETChem::getStateVector(std::vector<std::vector <double> >& state_
 
 void ChemElemODETChem::getStateVectorDevice(real_type_2d_view& state_vector)
 {
+  Tines::ProfilingRegionScope region("CSPlib::getStateVectorDevice");
   // state_vector for csp analysis does not include variables that do not have a differencial equation such as
   // pressure and density
   CSPLIB_CHECK_ERROR(_state.span() == 0, " _state is not allocated in device");
@@ -389,17 +389,35 @@ int ChemElemODETChem::getVarIndex(const std::string & var_name){
 
 }
 
-void ChemElemODETChem::evalRoP()
+void ChemElemODETChem::evalRoP(const ordinal_type& team_size, const ordinal_type& vector_size)
     {
+
+    Tines::ProfilingRegionScope region("CSPlib::evalRoP");
     //compute rate of progress for gas phase
 
     if (_run_on_device){
+
+      const auto exec_space_instance = TChem::exec_space();
+      const ordinal_type level = 1;
+      const ordinal_type per_team_extent = TChem::RateOfProgress::getWorkSpaceSize(kmcd);
+      const ordinal_type per_team_scratch =
+      Scratch<real_type_1d_view>::shmem_size(per_team_extent);
+
+      policy_type policy(exec_space_instance, _nBatch, Kokkos::AUTO());
+
+      if ( team_size > 0 && vector_size > 0) {
+        policy = policy_type(exec_space_instance, _nBatch, team_size, vector_size);
+      }
+
+      policy.set_scratch_size(level, Kokkos::PerTeam(per_team_scratch));
+
+
 
       _RoPFor = real_type_2d_view("Gas_Forward_RateOfProgess", _nBatch, _Nreac );
       _RoPRev = real_type_2d_view("Gas_Reverse_RateOfProgess", _nBatch, _Nreac);
 
       RateOfProgress::
-             runDeviceBatch(_nBatch,
+             runDeviceBatch(policy,
                             _state, //gas
                              //output,
                             _RoPFor, // Forward rate of progess
@@ -430,8 +448,40 @@ void ChemElemODETChem::evalRoP()
 }
 
 
+void ChemElemODETChem::evalSourceVectorDevice(const ordinal_type& team_size, const ordinal_type& vector_size)
+{
+    Tines::ProfilingRegionScope region("CSPlib::evalSourceVectorDevice");
+
+    const auto exec_space_instance = TChem::exec_space();
+    const ordinal_type level = 1;
+    const ordinal_type per_team_extent = TChem::SourceTerm::getWorkSpaceSize(kmcd);
+    const ordinal_type per_team_scratch =
+    Scratch<real_type_1d_view>::shmem_size(per_team_extent);
+
+    policy_type policy(exec_space_instance, _nBatch, Kokkos::AUTO());
+
+    if ( team_size > 0 && vector_size > 0) {
+      policy = policy_type(exec_space_instance, _nBatch, team_size, vector_size);
+    }
+
+    policy.set_scratch_size(level, Kokkos::PerTeam(per_team_scratch));
+
+    _rhs = real_type_2d_view("sourcethermgas", _nBatch, _Nvars );
+    real_type_2d_view workspace; //assume that the workspace is given from scratch space
+    TChem::SourceTerm::runDeviceBatch(policy,
+                                _state, //gas
+                                _rhs,
+                                workspace,
+                                kmcd);
+    //
+    _rhs_need_sync = NeedSyncToHost;
+
+
+}
+
 int ChemElemODETChem::evalSourceVector()
 {
+    Tines::ProfilingRegionScope region("CSPlib::evalSourceVector");
 
     if (_run_on_device){
 
@@ -465,13 +515,29 @@ int ChemElemODETChem::evalSourceVector()
 }
 
 
-void ChemElemODETChem::evalSmatrix()
+void ChemElemODETChem::evalSmatrix(const ordinal_type& team_size,
+                                   const ordinal_type& vector_size)
 {
+  Tines::ProfilingRegionScope region("CSPlib::evalSmatrix");
 
   if (_run_on_device){
 
-    _Smat  = real_type_3d_view("Smat_PlugflowreactorSmat", _nBatch, _Nvars, _Nreac );
-    TChem::Smatrix::runDeviceBatch(_nBatch,
+    const auto exec_space_instance = TChem::exec_space();
+    const ordinal_type level = 1;
+    const ordinal_type per_team_extent = TChem::Smatrix::getWorkSpaceSize(kmcd);
+    const ordinal_type per_team_scratch =
+    Scratch<real_type_1d_view>::shmem_size(per_team_extent);
+
+    policy_type policy(exec_space_instance, _nBatch, Kokkos::AUTO());
+
+    if ( team_size > 0 && vector_size > 0) {
+      policy = policy_type(exec_space_instance, _nBatch, team_size, vector_size);
+    }
+
+    policy.set_scratch_size(level, Kokkos::PerTeam(per_team_scratch));
+
+    _Smat  = real_type_3d_view("Smatrix", _nBatch, _Nvars, _Nreac );
+    TChem::Smatrix::runDeviceBatch(policy,
                                     _state, //gas
                                     _Smat,
                                     kmcd);
@@ -481,12 +547,12 @@ void ChemElemODETChem::evalSmatrix()
   } else {
 
 
-    _Smat_host  = real_type_3d_view_host("Smat_PlugflowreactorSmat", _nBatch, _Nvars, _Nreac );
+    _Smat_host  = real_type_3d_view_host("Smatrix", _nBatch, _Nvars, _Nreac );
 
     TChem::Smatrix::runHostBatch(_nBatch,
-                                   _state_host, //gas
-                                    _Smat_host,
-                                    kmcd_host);
+                                 _state_host, //gas
+                                 _Smat_host,
+                                 kmcd_host);
 
    _smat_need_sync = NeedSyncToDevice;
 
@@ -500,6 +566,7 @@ void ChemElemODETChem::evalJacMatrixDevice(const ordinal_type& useJacAnl,
                                            const bool& use_shared_workspace )
 {
 
+  Tines::ProfilingRegionScope region("CSPlib::evalJacMatrixDevice");
   _jac = real_type_3d_view("Jacobian ",_nBatch, _Nvars, _Nvars);
   const auto exec_space_instance = TChem::exec_space();
   const ordinal_type level = 1;
@@ -778,6 +845,7 @@ void ChemElemODETChem::getSmatrix(std::vector<std::vector<double> >& Smat)
 
 void ChemElemODETChem::getRoPDevice(real_type_2d_view& RoP)
 {
+  Tines::ProfilingRegionScope region("CSPlib::getRoPDevice");
 
   // 1. check if we compute RoP in host
   if (_RoP_need_sync == NeedSyncToDevice) {
@@ -812,6 +880,7 @@ void ChemElemODETChem::getRoPDevice(real_type_2d_view& RoP)
 void ChemElemODETChem::getSmatrixDevice(real_type_3d_view& Smatrixdb)
 {
 
+   Tines::ProfilingRegionScope region("CSPlib::getSmatrixDevice");
    // 1. check if we compute rhs in host
    if (_smat_need_sync == NeedSyncToDevice) {
      _Smat  = real_type_3d_view("Smat device", _nBatch, _Nvars, _Nreac );
@@ -837,6 +906,7 @@ void ChemElemODETChem::getSmatrixDevice(real_type_3d_view& Smatrixdb)
 
 void ChemElemODETChem::getSourceVectorDevice(real_type_2d_view& rhs)
 {
+  Tines::ProfilingRegionScope region("CSPlib::getSourceVectorDevice");
   // 1. check if we compute rhs in host
   if (_rhs_need_sync == NeedSyncToDevice) {
     _rhs = real_type_2d_view("sourcethermgas", _nBatch, _Nvars );
@@ -851,6 +921,7 @@ void ChemElemODETChem::getSourceVectorDevice(real_type_2d_view& rhs)
 
 void ChemElemODETChem::getJacMatrixDevice(real_type_3d_view& jac)
 {
+  Tines::ProfilingRegionScope region("CSPlib::getSmatrixDevice");
   // 1. check if we compute rhs in host
   if (_jac_need_sync == NeedSyncToDevice) {
     _jac = real_type_3d_view("AnalyticalJacIgnition",_nBatch, _Nvars, _Nvars);

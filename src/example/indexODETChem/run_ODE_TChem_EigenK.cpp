@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
     CSP::ScopeGuard guard(argc, argv);
 
 
-    Kokkos::Impl::Timer timer;
+    Kokkos::Timer timer;
 
     timer.reset();
 

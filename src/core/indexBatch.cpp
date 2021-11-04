@@ -3,8 +3,8 @@ CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
-Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS). 
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains 
+Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
 certain rights in this software.
 
 This file is part of CSPlib. CSPlib is open-source software: you can redistribute it
@@ -31,6 +31,11 @@ CSPIndexBatch::~CSPIndexBatch()
   freeWorkView();
   freeSlowImportanceIndexView();
   freeFastImportantIndexView();
+#if defined(CSPLIB_MESUARE_WALL_TIME)
+  fprintf(fs, "} \n ");// end file
+  fprintf(fs, "}");// end file
+  fclose(fs);
+#endif
 }
 
 void CSPIndexBatch::createBetaView(){
@@ -43,8 +48,9 @@ void CSPIndexBatch::freeBetaView(){
 }
 
 void CSPIndexBatch::evalBeta(const ordinal_type& team_size,
-                             const ordinal_type& vector_size) {
-
+                             const ordinal_type& vector_size)
+{
+  Tines::ProfilingRegionScope region("CSPlib::evalBeta");
   createBetaView();
   using policy_type = Kokkos::TeamPolicy<exec_space>;
   policy_type policy(_nBatch, Kokkos::AUTO()); // fine
@@ -66,7 +72,7 @@ void CSPIndexBatch::evalBeta(const ordinal_type& team_size,
 #if defined(CSPLIB_MESUARE_WALL_TIME)
   exec_space().fence();
   const real_type t_eval_beta = timer.seconds();
-  fprintf(fs, "%s, %20.14e \n","Eval beta      ", t_eval_beta);
+  fprintf(fs, "%s: %20.14e, \n","\"Eval beta\"", t_eval_beta);
 #endif
 
 } // end of evalBeta
@@ -82,8 +88,10 @@ void CSPIndexBatch::freeAlphaView(){
 }
 
 void CSPIndexBatch::evalAlpha(const ordinal_type& team_size,
-                              const ordinal_type& vector_size) {
+                              const ordinal_type& vector_size)
+{
 
+  Tines::ProfilingRegionScope region("CSPlib::evalAlpha");
   if (_Beta.span() == 0)
       evalBeta(team_size, vector_size);
   createAlphaView();
@@ -108,7 +116,7 @@ void CSPIndexBatch::evalAlpha(const ordinal_type& team_size,
 #if defined(CSPLIB_MESUARE_WALL_TIME)
   exec_space().fence();
   const real_type t_eval_alpha = timer.seconds();
-  fprintf(fs, "%s, %20.14e \n","Eval alpha      ", t_eval_alpha);
+  fprintf(fs, "%s: %20.14e, \n","\"Eval alpha\"", t_eval_alpha);
 #endif
 
 } // end of evalBeta
@@ -124,8 +132,9 @@ void CSPIndexBatch::freeGammaView(){
 }
 
 void CSPIndexBatch::evalGamma(const ordinal_type& team_size,
-                              const ordinal_type& vector_size) {
-
+                              const ordinal_type& vector_size)
+{
+  Tines::ProfilingRegionScope region("CSPlib::evalGamma");
   if (_Beta.span() == 0)
       evalBeta(team_size,vector_size);
   createGammaView();
@@ -153,7 +162,7 @@ void CSPIndexBatch::evalGamma(const ordinal_type& team_size,
 #if defined(CSPLIB_MESUARE_WALL_TIME)
   exec_space().fence();
   const real_type t_eval_gamma = timer.seconds();
-  fprintf(fs, "%s, %20.14e \n","Eval gamma      ", t_eval_gamma);
+  fprintf(fs, "%s: %20.14e, \n","\"Eval gamma\"", t_eval_gamma);
 #endif
 
 } // end of evalBeta
@@ -181,8 +190,9 @@ void CSPIndexBatch::freeWorkView(){
 }
 
 void CSPIndexBatch::evalParticipationIndex(const ordinal_type& team_size,
-                                           const ordinal_type& vector_size){
-
+                                           const ordinal_type& vector_size)
+{
+    Tines::ProfilingRegionScope region("CSPlib::evalParticipationIndex");
 
      policy_type policy(exec_space(), _nBatch, Kokkos::AUTO());
      if ( team_size > 0 && vector_size > 0) {
@@ -213,7 +223,7 @@ void CSPIndexBatch::evalParticipationIndex(const ordinal_type& team_size,
 #if defined(CSPLIB_MESUARE_WALL_TIME)
     exec_space().fence();
     const real_type t_eval_part_indx = timer.seconds();
-    fprintf(fs, "%s, %20.14e \n","Eval participation index   ", t_eval_part_indx);
+    fprintf(fs, "%s: %20.14e, \n","\"Eval participation index\"", t_eval_part_indx);
 #endif
 
     _ParticipationIndex_need_sync = NeedSyncToHost;
@@ -236,6 +246,7 @@ void CSPIndexBatch::getParticipationIndex(
 }
 
 CSPIndexBatch::real_type_3d_view_host CSPIndexBatch::getParticipationIndex(){
+  Tines::ProfilingRegionScope region("CSPlib::getParticipationIndex");
   CSPLIB_CHECK_ERROR(_ParticipationIndex._dev.span() == 0, " Partocipation index should be computed: run evalParticipationIndex()");
 
   if (_ParticipationIndex_need_sync == NeedSyncToHost) {
@@ -264,6 +275,7 @@ void CSPIndexBatch::freeSlowImportanceIndexView(){
 void CSPIndexBatch::evalImportanceIndexSlow(const ordinal_type& team_size,
                                             const ordinal_type& vector_size)
      {
+     Tines::ProfilingRegionScope region("CSPlib::evalImportanceIndexSlow");
      policy_type policy(exec_space(), _nBatch, Kokkos::AUTO());
      if ( team_size > 0 && vector_size > 0) {
        policy = policy_type(exec_space(), _nBatch, team_size, vector_size);
@@ -292,7 +304,7 @@ void CSPIndexBatch::evalImportanceIndexSlow(const ordinal_type& team_size,
 #if defined(CSPLIB_MESUARE_WALL_TIME)
     exec_space().fence();
     const real_type t_eval_slow_indx = timer.seconds();
-    fprintf(fs, "%s, %20.14e \n","Eval slow importance index ", t_eval_slow_indx);
+    fprintf(fs, "%s: %20.14e, \n","\"Eval slow importance index\"", t_eval_slow_indx);
 #endif
 
     _SlowImportanceIndex_need_sync = NeedSyncToHost;
@@ -315,6 +327,7 @@ void CSPIndexBatch::getImportanceIndexSlow(
 }
 
 CSPIndexBatch::real_type_3d_view_host CSPIndexBatch::getImportanceIndexSlow(){
+  Tines::ProfilingRegionScope region("CSPlib::getImportanceIndexSlow");
   CSPLIB_CHECK_ERROR(_SlowImportanceIndex._dev.span() == 0, " Slow importance index should be computed: run evalImportanceIndexSlow()");
 
   if (_SlowImportanceIndex_need_sync == NeedSyncToHost) {
@@ -339,7 +352,9 @@ void CSPIndexBatch::freeFastImportantIndexView(){
 }
 
 void CSPIndexBatch::evalImportanceIndexFast(const ordinal_type& team_size,
-                                            const ordinal_type& vector_size){
+                                            const ordinal_type& vector_size)
+{
+     Tines::ProfilingRegionScope region("CSPlib::evalImportanceIndexFast");
      policy_type policy(exec_space(), _nBatch, Kokkos::AUTO());
      if ( team_size > 0 && vector_size > 0) {
       policy = policy_type(exec_space(), _nBatch, team_size, vector_size);
@@ -370,14 +385,16 @@ void CSPIndexBatch::evalImportanceIndexFast(const ordinal_type& team_size,
 #if defined(CSPLIB_MESUARE_WALL_TIME)
     exec_space().fence();
     const real_type t_eval_fast_indx = timer.seconds();
-    fprintf(fs, "%s, %20.14e \n","Eval fast importance index ", t_eval_fast_indx);
+    fprintf(fs, "%s: %20.14e \n","\"Eval fast importance index\"", t_eval_fast_indx);
 #endif
 
     _FastImportanceIndex_need_sync = NeedSyncToHost;
 }
 
 void CSPIndexBatch::getImportanceIndexFast(
-       std::vector<std::vector< std::vector< double > > > &Ifast ) {
+       std::vector<std::vector< std::vector< double > > > &Ifast )
+{
+
        CSPLIB_CHECK_ERROR(_FastImportanceIndex._dev.span() == 0, " Fast importance index should be computed: run evalImportanceIndexFast()");
 
        if (_FastImportanceIndex_need_sync == NeedSyncToHost) {
@@ -394,6 +411,7 @@ void CSPIndexBatch::getImportanceIndexFast(
 }
 
 CSPIndexBatch::real_type_3d_view_host CSPIndexBatch::getImportanceIndexFast(){
+  Tines::ProfilingRegionScope region("CSPlib::evalImportanceIndexFast");
   CSPLIB_CHECK_ERROR(_FastImportanceIndex._dev.span() == 0, " Fast importance index should be computed: run evalImportanceIndexFast()");
 
   if (_FastImportanceIndex_need_sync == NeedSyncToHost) {

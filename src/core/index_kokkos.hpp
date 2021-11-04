@@ -3,8 +3,8 @@ CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
-Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS). 
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains 
+Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
 certain rights in this software.
 
 This file is part of CSPlib. CSPlib is open-source software: you can redistribute it
@@ -111,8 +111,9 @@ struct IndexComputation {
                          const real_type_2d_view_type& Alpha //output
                          )
   {
-    const ordinal_type n_processes(Beta.extent(1));
-    const ordinal_type n_variables(Beta.extent(0));
+    // KK: internal compiler error on cuda; change const to non-const variable
+    ordinal_type n_processes(Beta.extent(1));
+    ordinal_type n_variables(Beta.extent(0));
 
     // alpha = A* B
     Kokkos::parallel_for(
@@ -164,7 +165,7 @@ struct IndexComputation {
                 const real_type_3d_view_type& S, // input
                 const real_type_3d_view_type& Beta) // output
   {
-    Kokkos::Profiling::pushRegion(profile_name);
+    Tines::ProfilingRegionScope region(profile_name);
     using policy_type = PolicyType;
 
     const real_type one(1), zero(0);
@@ -183,8 +184,6 @@ struct IndexComputation {
     //    evalBeta(member, B_at_i, S_at_i, Beta_at_i);
     //  });
 
-     Kokkos::Profiling::popRegion();
-
   }
   //
   template<typename PolicyType>
@@ -196,7 +195,7 @@ struct IndexComputation {
                 const ordinal_type_1d_view_type& M, // input
                 const real_type_3d_view_type& Alpha) // output
   {
-    Kokkos::Profiling::pushRegion(profile_name);
+    Tines::ProfilingRegionScope region(profile_name);
     using policy_type = PolicyType;
 
     Kokkos::parallel_for(
@@ -211,8 +210,6 @@ struct IndexComputation {
 
        evalAlpha(member, Beta_at_i, A_at_i, M_at_i, Alpha_at_i);
      });
-     Kokkos::Profiling::popRegion();
-
   }
   //
   template<typename PolicyType>
@@ -224,7 +221,7 @@ struct IndexComputation {
                 const ordinal_type_1d_view_type& M, // input
                 const real_type_3d_view_type& Gamma) // output
   {
-    Kokkos::Profiling::pushRegion(profile_name);
+    Tines::ProfilingRegionScope region(profile_name);
     using policy_type = PolicyType;
 
     Kokkos::parallel_for(
@@ -239,7 +236,6 @@ struct IndexComputation {
 
        evalGamma(member, Beta_at_i, A_at_i, M_at_i, Gamma_at_i);
      });
-     Kokkos::Profiling::popRegion();
 
   }
   //
@@ -252,7 +248,7 @@ struct IndexComputation {
                 const real_type_3d_view_type& CSPIndex, //output
                 const real_type_2d_view_type& deno) // work
   {
-    Kokkos::Profiling::pushRegion(profile_name);
+    Tines::ProfilingRegionScope region(profile_name);
     using policy_type = PolicyType;
 
     Kokkos::parallel_for(
@@ -267,16 +263,7 @@ struct IndexComputation {
 
        evalCSPIndex(member, Beta_at_i, RoP_at_i, CSPIndex_at_i, deno_at_i);
      });
-     Kokkos::Profiling::popRegion();
-
   }
-
-
-
-
-
-
-
 
 };
 

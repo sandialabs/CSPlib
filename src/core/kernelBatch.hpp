@@ -3,8 +3,8 @@ CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
-Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS). 
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains 
+Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
 certain rights in this software.
 
 This file is part of CSPlib. CSPlib is open-source software: you can redistribute it
@@ -90,7 +90,7 @@ class CSPKernelBatch
     int _nBatch, _n_variables;
 
 #if defined(CSPLIB_MESUARE_WALL_TIME)
-    Kokkos::Impl::Timer timer;
+    Kokkos::Timer timer;
     FILE* fs;
 #endif
 
@@ -118,8 +118,10 @@ class CSPKernelBatch
           {
             printf("kernel: _nBatch %d, _n_variables %d\n", _nBatch, _n_variables);
 #if defined(CSPLIB_MESUARE_WALL_TIME)
-            fs = fopen("CSPLIB_KernelKokkos.out", "a+");
-            fprintf(fs, "%s, %d \n","Number of state vectors  ", _nBatch);
+            fs = fopen("CSPLIB_KernelKokkos.out", "w");
+            fprintf(fs, "{\n");
+            fprintf(fs, "%s: %d, \n","\"Number of state vectors\"", _nBatch);
+            fprintf(fs, "\"Kernel Class\": \n {\n");
 #endif
           }
 

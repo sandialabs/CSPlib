@@ -3,8 +3,8 @@ CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
-Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS). 
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains 
+Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
 certain rights in this software.
 
 This file is part of CSPlib. CSPlib is open-source software: you can redistribute it
@@ -32,6 +32,12 @@ CSPKernelBatch::~CSPKernelBatch()
   freeTimeScalesView();
   freeModalAmpView();
   freeM_View();
+#if defined(CSPLIB_MESUARE_WALL_TIME)
+  // end a dummy task
+  fprintf(fs, "\"end\":0 \n } \n ");// end file
+  fprintf(fs, "}");// end file
+  fclose(fs);
+#endif
 }
 void CSPKernelBatch::createA_View(){
      if (_A._dev.span() == 0){
@@ -78,7 +84,7 @@ void CSPKernelBatch::freeEigenvaluesImagPartView(){
 void CSPKernelBatch::evalEigenSolution(const ordinal_type& team_size,
                                        const ordinal_type& vector_size)
 {
-
+  Tines::ProfilingRegionScope region("CSPlib::evalEigenSolution");
   const int wlen = 3 * _n_variables * _n_variables + 2 * _n_variables;
   real_type_2d_view work_eigensolver("work eigen solver", _nBatch, wlen);
 
@@ -94,11 +100,14 @@ void CSPKernelBatch::evalEigenSolution(const ordinal_type& team_size,
   /// tpl use
   control["Bool:UseTPL"].bool_value = use_tpl_if_avail;
   /// eigen solve
-  control["Bool:SolveEigenvaluesNonSymmetricProblem:Sort"].bool_value = compute_and_sort_eigenpairs;
-  control["IntPair:Hessenberg:TeamSize"].int_pair_value = std::pair<int,int>(team_size,vector_size);
-  control["IntPair:RightEigenvectorSchur:TeamSize"].int_pair_value = std::pair<int,int>(team_size,vector_size);
-  control["IntPair:Gemm:TeamSize"].int_pair_value = std::pair<int,int>(team_size,vector_size);
-  control["IntPair:SortRightEigenPairs:TeamSize"].int_pair_value = std::pair<int,int>(team_size,vector_size);
+  if ( team_size > 0 && vector_size > 0) {
+    control["Bool:SolveEigenvaluesNonSymmetricProblem:Sort"].bool_value = compute_and_sort_eigenpairs;
+    control["IntPair:Hessenberg:TeamSize"].int_pair_value = std::pair<int,int>(team_size,vector_size);
+    control["IntPair:RightEigenvectorSchur:TeamSize"].int_pair_value = std::pair<int,int>(team_size,vector_size);
+    control["IntPair:Gemm:TeamSize"].int_pair_value = std::pair<int,int>(team_size,vector_size);
+    control["IntPair:SortRightEigenPairs:TeamSize"].int_pair_value = std::pair<int,int>(team_size,vector_size);
+  } // else use tines default values
+
 
 
 #if defined(CSPLIB_MESUARE_WALL_TIME)
@@ -113,7 +122,7 @@ void CSPKernelBatch::evalEigenSolution(const ordinal_type& team_size,
 #if defined(CSPLIB_MESUARE_WALL_TIME)
   exec_space().fence();
   const real_type t_comp_eigen_solution = timer.seconds();
-  fprintf(fs, "%s, %20.14e \n","Compute eigensolution      ", t_comp_eigen_solution);
+  fprintf(fs, "%s: %20.14e, \n","\"Compute eigensolution\"", t_comp_eigen_solution);
 #endif
 
   _A_need_sync = NeedSyncToHost;
@@ -127,6 +136,7 @@ void CSPKernelBatch::evalEigenSolution(const ordinal_type& team_size,
 void CSPKernelBatch::sortEigenSolution(const ordinal_type& team_size,
                                        const ordinal_type& vector_size)
 {
+  Tines::ProfilingRegionScope region("CSPlib::sortEigenSolution");
   CSPLIB_CHECK_ERROR(A._dev.span() == 0, " Right CSP basis vectors should be computed and sorted: run evalEigenSolution()");
 
   const int wlen = 3 * _n_variables * _n_variables + 2 * _n_variables;
@@ -144,7 +154,7 @@ void CSPKernelBatch::sortEigenSolution(const ordinal_type& team_size,
 #if defined(CSPLIB_MESUARE_WALL_TIME)
   exec_space().fence();
   const real_type t_sort_eigen_values_vectors = timer.seconds();
-  fprintf(fs, "%s, %20.14e \n","Sort eigensolution         ", t_sort_eigen_values_vectors);
+  fprintf(fs, "%s: %20.14e, \n","\"Sort eigensolution\"", t_sort_eigen_values_vectors);
 #endif
 
   work_eigensolver =  real_type_2d_view();
@@ -167,6 +177,7 @@ void CSPKernelBatch::freeB_View(){
 void CSPKernelBatch::evalCSPbasisVectors(const ordinal_type& team_size,
                                          const ordinal_type& vector_size)
 {
+  Tines::ProfilingRegionScope region("CSPlib::evalCSPbasisVectors");
   CSPLIB_CHECK_ERROR(A._dev.span() == 0, " Right CSP basis vectors should be computed and sorted: run evalEigenSolution() and sortEigenSolution() ");
   createB_View();
 
@@ -188,7 +199,7 @@ void CSPKernelBatch::evalCSPbasisVectors(const ordinal_type& team_size,
 #if defined(CSPLIB_MESUARE_WALL_TIME)
   exec_space().fence();
   const real_type t_set_csp_vectors = timer.seconds();
-  fprintf(fs, "%s, %20.14e \n","Set csp vectors            ", t_set_csp_vectors);
+  fprintf(fs, "%s: %20.14e, \n","\"Set csp vectors\"", t_set_csp_vectors);
 #endif
 
   _B_need_sync = NeedSyncToHost;
@@ -213,6 +224,8 @@ void CSPKernelBatch::freeCSP_PointersView(){
 void CSPKernelBatch::evalCSP_Pointers(const ordinal_type& team_size,
                                       const ordinal_type& vector_size)
 {
+  Tines::ProfilingRegionScope region("CSPlib::evalCSP_Pointers");
+
   CSPLIB_CHECK_ERROR(A._dev.span() == 0, " Right CSP basis vectors should be computed and sorted: run evalEigenSolution() and sortEigenSolution() ");
 
   policy_type policy(exec_space(), _nBatch, Kokkos::AUTO());
@@ -236,7 +249,7 @@ void CSPKernelBatch::evalCSP_Pointers(const ordinal_type& team_size,
 #if defined(CSPLIB_MESUARE_WALL_TIME)
   exec_space().fence();
   const real_type t_eval_csp_pointers = timer.seconds();
-  fprintf(fs, "%s, %20.14e \n","Eval csp pointer           ", t_eval_csp_pointers);
+  fprintf(fs, "%s: %20.14e, \n","\"Eval csp pointer\"", t_eval_csp_pointers);
 #endif
 
   _CSP_pointers_need_sync = NeedSyncToHost;
@@ -262,6 +275,7 @@ void CSPKernelBatch::freeTimeScalesView()
 void CSPKernelBatch::evalTimeScales(const ordinal_type& team_size,
                                     const ordinal_type& vector_size)
 {
+  Tines::ProfilingRegionScope region("CSPlib::evalTimeScales");
   policy_type policy(exec_space(), _nBatch, Kokkos::AUTO());
   if ( team_size > 0 && vector_size > 0) {
     policy = policy_type(exec_space(), _nBatch, team_size, vector_size);
@@ -282,7 +296,7 @@ void CSPKernelBatch::evalTimeScales(const ordinal_type& team_size,
 #if defined(CSPLIB_MESUARE_WALL_TIME)
   exec_space().fence();
   const real_type t_eval_tau = timer.seconds();
-  fprintf(fs, "%s, %20.14e \n","Eval time scales           ", t_eval_tau);
+  fprintf(fs, "%s: %20.14e, \n","\"Eval time scales\"", t_eval_tau);
 #endif
 
   _time_scales_need_sync = NeedSyncToHost;
@@ -310,6 +324,8 @@ void CSPKernelBatch::freeModalAmpView()
 void CSPKernelBatch::evalModalAmp(const ordinal_type& team_size,
                                   const ordinal_type& vector_size)
 {
+  Tines::ProfilingRegionScope region("CSPlib::evalModalAmp");
+
   policy_type policy(exec_space(), _nBatch, Kokkos::AUTO());
   if ( team_size > 0 && vector_size > 0) {
     policy = policy_type(exec_space(), _nBatch, team_size, vector_size);
@@ -331,7 +347,7 @@ void CSPKernelBatch::evalModalAmp(const ordinal_type& team_size,
 #if defined(CSPLIB_MESUARE_WALL_TIME)
   exec_space().fence();
   const real_type t_eval_mode = timer.seconds();
-  fprintf(fs, "%s, %20.14e \n","Eval amplitude of modes    ", t_eval_mode);
+  fprintf(fs, "%s: %20.14e, \n","\"Eval amplitude of modes\"", t_eval_mode);
 #endif
 
   _modal_amplitude_need_sync = NeedSyncToHost;
@@ -358,8 +374,7 @@ void CSPKernelBatch::freeM_View()
 void CSPKernelBatch::evalM(const ordinal_type& team_size,
                            const ordinal_type& vector_size)
 {
-
-
+  Tines::ProfilingRegionScope region("CSPlib::evalM");
 
   CSPLIB_CHECK_ERROR(_modal_amplitude._dev.span() == 0, " modal amplitude should be computed: run evalModalAmp()");
   CSPLIB_CHECK_ERROR(_time_scales._dev.span() == 0, " Time scales should be computed: run evalTimeScales()");
@@ -396,7 +411,7 @@ void CSPKernelBatch::evalM(const ordinal_type& team_size,
 #if defined(CSPLIB_MESUARE_WALL_TIME)
   exec_space().fence();
   const real_type t_eval_m = timer.seconds();
-  fprintf(fs, "%s, %20.14e \n","Eval M                     ", t_eval_m);
+  fprintf(fs, "%s: %20.14e, \n","\"Eval M\"", t_eval_m);
 #endif
 
   _M_need_sync = NeedSyncToHost;
@@ -420,6 +435,7 @@ CSPKernelBatch::real_type_3d_view CSPKernelBatch::getRightCSPVecDevice()
 
 CSPKernelBatch::real_type_3d_view CSPKernelBatch::getCSPPointersDevice()
 {
+  Tines::ProfilingRegionScope region("CSPlib::getCSPPointersDevice");
   return _CSP_pointers._dev;
 }
 
@@ -436,6 +452,7 @@ CSPKernelBatch::real_type_3d_view_host CSPKernelBatch::getCSPPointers()
 
 CSPKernelBatch::real_type_2d_view_host CSPKernelBatch::getTimeScales()
 {
+  Tines::ProfilingRegionScope region("CSPlib::evalTimeScales");
   CSPLIB_CHECK_ERROR(_time_scales._dev.span() == 0, " Time scales should be computed: run evalTimeScales()");
 
   if (_time_scales_need_sync == NeedSyncToHost) {
@@ -447,6 +464,7 @@ CSPKernelBatch::real_type_2d_view_host CSPKernelBatch::getTimeScales()
 
 CSPKernelBatch::real_type_2d_view_host CSPKernelBatch::getModalAmp()
 {
+  Tines::ProfilingRegionScope region("CSPlib::getModalAmp");
   CSPLIB_CHECK_ERROR(_modal_amplitude._dev.span() == 0, " modal amplitude should be computed: run evalModalAmp()");
 
   if (_modal_amplitude_need_sync == NeedSyncToHost) {
@@ -458,12 +476,14 @@ CSPKernelBatch::real_type_2d_view_host CSPKernelBatch::getModalAmp()
 
 CSPKernelBatch::ordinal_type_1d_view CSPKernelBatch::getMDevice()
 {
+  Tines::ProfilingRegionScope region("CSPlib::getMDevice");
   CSPLIB_CHECK_ERROR(_M._dev.span() == 0, " M, number of exhausted modes, should be computed: run evalM()");
   return _M._dev;
 }
 
 CSPKernelBatch::ordinal_type_1d_view_host CSPKernelBatch::getM()
 {
+  Tines::ProfilingRegionScope region("CSPlib::evalM");
   CSPLIB_CHECK_ERROR(_M._dev.span() == 0, "M, number of exhausted modes, should be computed: run evalM()");
 
   if (_M_need_sync == NeedSyncToHost) {
