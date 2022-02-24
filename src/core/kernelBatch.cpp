@@ -32,12 +32,6 @@ CSPKernelBatch::~CSPKernelBatch()
   freeTimeScalesView();
   freeModalAmpView();
   freeM_View();
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-  // end a dummy task
-  fprintf(fs, "\"end\":0 \n } \n ");// end file
-  fprintf(fs, "}");// end file
-  fclose(fs);
-#endif
 }
 void CSPKernelBatch::createA_View(){
      if (_A._dev.span() == 0){
@@ -109,21 +103,10 @@ void CSPKernelBatch::evalEigenSolution(const ordinal_type& team_size,
   } // else use tines default values
 
 
-
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-  timer.reset();
-#endif
-
   Tines::SolveEigenvaluesNonSymmetricProblemDevice<exec_space>
        ::invoke( exec_space(), _Jacobian, _eigenvalues_real_part._dev,
                 _eigenvalues_imag_part._dev, _A._dev, work_eigensolver,
                  control);
-
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-  exec_space().fence();
-  const real_type t_comp_eigen_solution = timer.seconds();
-  fprintf(fs, "%s: %20.14e, \n","\"Compute eigensolution\"", t_comp_eigen_solution);
-#endif
 
   _A_need_sync = NeedSyncToHost;
   _eigenvalues_real_part_need_sync = NeedSyncToHost;
@@ -143,19 +126,11 @@ void CSPKernelBatch::sortEigenSolution(const ordinal_type& team_size,
   real_type_2d_view work_eigensolver("work eigen solver", _nBatch, wlen);
   Kokkos::fence();
 
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-  timer.reset();
-#endif
 
   Tines::SortRightEigenPairsDevice<exec_space>
        ::invoke(exec_space(), _eigenvalues_real_part._dev,
                 _eigenvalues_imag_part._dev, _A._dev, work_eigensolver);
 
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-  exec_space().fence();
-  const real_type t_sort_eigen_values_vectors = timer.seconds();
-  fprintf(fs, "%s: %20.14e, \n","\"Sort eigensolution\"", t_sort_eigen_values_vectors);
-#endif
 
   work_eigensolver =  real_type_2d_view();
 }
@@ -189,18 +164,10 @@ void CSPKernelBatch::evalCSPbasisVectors(const ordinal_type& team_size,
   }
   Kokkos::fence();
 
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-  timer.reset();
-#endif
   kernel_csplib_device::evalLeftCSP_BasisVectorsBatch(
                         "CSPlib::computeCSPbasisVectors::runDeviceBatch",
                         policy, _A._dev, _B._dev, work);
 
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-  exec_space().fence();
-  const real_type t_set_csp_vectors = timer.seconds();
-  fprintf(fs, "%s: %20.14e, \n","\"Set csp vectors\"", t_set_csp_vectors);
-#endif
 
   _B_need_sync = NeedSyncToHost;
   work = real_type_2d_view();
@@ -236,21 +203,13 @@ void CSPKernelBatch::evalCSP_Pointers(const ordinal_type& team_size,
   createCSP_PointersView();
   Kokkos::fence();
 
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-  timer.reset();
-#endif
   kernel_csplib_device
   ::evalCSPPointersBatch("CSPlib::evalCSPPointers::runDeviceBatch",
                          policy,
                          _A._dev, // input : right CSP basis vectors
                          _B._dev,// input : letf CSP basis vectors
                          _CSP_pointers._dev);
-//
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-  exec_space().fence();
-  const real_type t_eval_csp_pointers = timer.seconds();
-  fprintf(fs, "%s: %20.14e, \n","\"Eval csp pointer\"", t_eval_csp_pointers);
-#endif
+
 
   _CSP_pointers_need_sync = NeedSyncToHost;
 }
@@ -283,21 +242,13 @@ void CSPKernelBatch::evalTimeScales(const ordinal_type& team_size,
   createTimeScalesView();
   Kokkos::fence();
 
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-  timer.reset();
-#endif
   kernel_csplib_device
   ::evalTimeScalesBatch("CSPlib::evalTimeScales::runDeviceBatch",
                         policy,
                         _eigenvalues_real_part._dev, // input
                         _eigenvalues_imag_part._dev, //input
                         _time_scales._dev); // output
-//
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-  exec_space().fence();
-  const real_type t_eval_tau = timer.seconds();
-  fprintf(fs, "%s: %20.14e, \n","\"Eval time scales\"", t_eval_tau);
-#endif
+
 
   _time_scales_need_sync = NeedSyncToHost;
 
@@ -333,22 +284,12 @@ void CSPKernelBatch::evalModalAmp(const ordinal_type& team_size,
   createModalAmpView();
   Kokkos::fence();
 
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-  timer.reset();
-#endif
-
   kernel_csplib_device
   ::evalModalAmpBatch("CSPlib::evalModalAmp::runDeviceBatch",
                      policy,
                      _B._dev,// input : letf CSP basis vectors
                      _rhs,// input
                      _modal_amplitude._dev);
-
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-  exec_space().fence();
-  const real_type t_eval_mode = timer.seconds();
-  fprintf(fs, "%s: %20.14e, \n","\"Eval amplitude of modes\"", t_eval_mode);
-#endif
 
   _modal_amplitude_need_sync = NeedSyncToHost;
 
@@ -381,6 +322,7 @@ void CSPKernelBatch::evalM(const ordinal_type& team_size,
   CSPLIB_CHECK_ERROR(A._dev.span() == 0,
    " Right CSP basis vectors should be computed and sorted: run evalEigenSolution() and sortEigenSolution() ");
   real_type_2d_view error_csp(" error csp vector", _nBatch, _n_variables);
+  real_type_2d_view delta_yfast("delta yfast", _nBatch, _n_variables);
 
   createM_View();
 
@@ -389,10 +331,6 @@ void CSPKernelBatch::evalM(const ordinal_type& team_size,
     policy = policy_type(exec_space(), _nBatch, team_size, vector_size);
   }
   Kokkos::fence();
-
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-  timer.reset();
-#endif
 
   kernel_csplib_device
   ::evalMBatch("CSPlib::evalM::runDeviceBatch",
@@ -406,13 +344,9 @@ void CSPKernelBatch::evalM(const ordinal_type& team_size,
                _csp_rel_tol, // input relative tolerance
                _csp_abs_tol, // input absolute tolerance
                error_csp, // work
+               delta_yfast,
                _M._dev);
 
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-  exec_space().fence();
-  const real_type t_eval_m = timer.seconds();
-  fprintf(fs, "%s: %20.14e, \n","\"Eval M\"", t_eval_m);
-#endif
 
   _M_need_sync = NeedSyncToHost;
 

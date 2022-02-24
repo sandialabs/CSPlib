@@ -31,20 +31,11 @@ CSPIndexBatch::~CSPIndexBatch()
   freeWorkView();
   freeSlowImportanceIndexView();
   freeFastImportantIndexView();
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-  fprintf(fs, "} \n ");// end file
-  fprintf(fs, "}");// end file
-  fclose(fs);
-#endif
 }
 
 void CSPIndexBatch::createBetaView(){
      if (_Beta.span() == 0)
         _Beta = real_type_3d_view("Beta",_nBatch, _n_variables, _n_processes );
-}
-
-void CSPIndexBatch::freeBetaView(){
-     _Beta = real_type_3d_view();
 }
 
 void CSPIndexBatch::evalBeta(const ordinal_type& team_size,
@@ -59,21 +50,11 @@ void CSPIndexBatch::evalBeta(const ordinal_type& team_size,
   }
   Kokkos::fence();
 
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-  timer.reset();
-#endif
-
   index_csplib_device::evalBetaBatch("CSPlib::evalBeta::runDeviceBatch",
                 policy,
                 _B, // input
                 _S, // input
                 _Beta);
-
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-  exec_space().fence();
-  const real_type t_eval_beta = timer.seconds();
-  fprintf(fs, "%s: %20.14e, \n","\"Eval beta\"", t_eval_beta);
-#endif
 
 } // end of evalBeta
 
@@ -84,7 +65,8 @@ void CSPIndexBatch::createAlphaView(){
 }
 
 void CSPIndexBatch::freeAlphaView(){
-  _Alpha = real_type_3d_view();
+   if (_Alpha.span() > 0)
+     _Alpha = real_type_3d_view();
 }
 
 void CSPIndexBatch::evalAlpha(const ordinal_type& team_size,
@@ -103,9 +85,6 @@ void CSPIndexBatch::evalAlpha(const ordinal_type& team_size,
    policy = policy_type(exec_space(), _nBatch, team_size, vector_size);
   }
 
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-  timer.reset();
-#endif
   index_csplib_device::evalAlphaBatch("CSPlib::evalAlpha::runDeviceBatch",
                 policy,
                 _Beta, // input
@@ -113,11 +92,6 @@ void CSPIndexBatch::evalAlpha(const ordinal_type& team_size,
                 _M,
                 _Alpha);
 
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-  exec_space().fence();
-  const real_type t_eval_alpha = timer.seconds();
-  fprintf(fs, "%s: %20.14e, \n","\"Eval alpha\"", t_eval_alpha);
-#endif
 
 } // end of evalBeta
 
@@ -128,7 +102,8 @@ void CSPIndexBatch::createGammaView(){
 
 
 void CSPIndexBatch::freeGammaView(){
-  _Gamma = real_type_3d_view();
+  if (_Gamma.span() > 0)
+    _Gamma = real_type_3d_view();
 }
 
 void CSPIndexBatch::evalGamma(const ordinal_type& team_size,
@@ -148,9 +123,6 @@ void CSPIndexBatch::evalGamma(const ordinal_type& team_size,
 
   Kokkos::fence();
 
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-  timer.reset();
-#endif
 
   index_csplib_device::evalGammaBatch("CSPlib::evalGamma::runDeviceBatch",
                 policy,
@@ -159,23 +131,20 @@ void CSPIndexBatch::evalGamma(const ordinal_type& team_size,
                 _M,
                 _Gamma);
 
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-  exec_space().fence();
-  const real_type t_eval_gamma = timer.seconds();
-  fprintf(fs, "%s: %20.14e, \n","\"Eval gamma\"", t_eval_gamma);
-#endif
 
 } // end of evalBeta
 
 void CSPIndexBatch::createParticipationIndexView(){
-     _ParticipationIndex._dev = real_type_3d_view("ParticipationIndex",_nBatch, _n_variables, _n_processes);
+     _ParticipationIndex._dev = real_type_3d_view("ParticipationIndex",_nBatch, _n_variables, _n_total_processes);
      _ParticipationIndex._host = Kokkos::create_mirror_view(Kokkos::HostSpace(), _ParticipationIndex._dev);
      _ParticipationIndex_need_sync = NoNeedSync;
 }
 
 void CSPIndexBatch::freeParticipationIndexView(){
-     _ParticipationIndex._dev = real_type_3d_view();
-     _ParticipationIndex._host = real_type_3d_view_host();
+     if (_ParticipationIndex._dev.span() > 0)
+       _ParticipationIndex._dev = real_type_3d_view();
+     if (_ParticipationIndex._host.span() > 0)
+       _ParticipationIndex._host = real_type_3d_view_host();
 }
 
 void CSPIndexBatch::createWorkView(){
@@ -186,8 +155,15 @@ void CSPIndexBatch::createWorkView(){
 
 
 void CSPIndexBatch::freeWorkView(){
-  _work = real_type_2d_view();
+  if (_work.span() > 0)
+    _work = real_type_2d_view();
 }
+
+void CSPIndexBatch::freeBetaView(){
+  if (_Beta.span() > 0)
+    _Beta = real_type_3d_view();
+}
+
 
 void CSPIndexBatch::evalParticipationIndex(const ordinal_type& team_size,
                                            const ordinal_type& vector_size)
@@ -209,10 +185,6 @@ void CSPIndexBatch::evalParticipationIndex(const ordinal_type& team_size,
 
      Kokkos::fence();
 
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-     timer.reset();
-#endif
-
      index_csplib_device::evalCSPIndexBatch("CSPlib::evalParticipationIndex::runDeviceBatch",
                                             policy,
                                             _Beta, // input
@@ -220,11 +192,39 @@ void CSPIndexBatch::evalParticipationIndex(const ordinal_type& team_size,
                                             _ParticipationIndex._dev, //output
                                             _work);  // work
 
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-    exec_space().fence();
-    const real_type t_eval_part_indx = timer.seconds();
-    fprintf(fs, "%s: %20.14e, \n","\"Eval participation index\"", t_eval_part_indx);
-#endif
+    _ParticipationIndex_need_sync = NeedSyncToHost;
+}
+
+void CSPIndexBatch::evalParticipationIndexFwdAndRev(const ordinal_type& team_size,
+                                           const ordinal_type& vector_size)
+{
+    Tines::ProfilingRegionScope region("CSPlib::evalParticipationIndex");
+
+     policy_type policy(exec_space(), _nBatch, Kokkos::AUTO());
+     if ( team_size > 0 && vector_size > 0) {
+      policy = policy_type(exec_space(), _nBatch, team_size, vector_size);
+     }
+
+     if (_Beta.span() == 0)
+         evalBeta(team_size, vector_size);
+     if (_ParticipationIndex._dev.span() == 0)
+        createParticipationIndexView();
+
+     createWorkView();
+
+     Kokkos::fence();
+
+     // negative because _RoP_rev is not negative
+     const real_type factor(-1);
+     index_csplib_device::evalCSPIndexBatch("CSPlib::evalParticipationIndex::runDeviceBatch",
+                                            policy,
+                                            _Beta, // input
+                                            _RoP_fwd, // input
+                                            _RoP_rev, // input
+                                            factor,
+                                            _ParticipationIndex._dev, //output
+                                            _work);  // work
+
 
     _ParticipationIndex_need_sync = NeedSyncToHost;
 }
@@ -259,7 +259,7 @@ CSPIndexBatch::real_type_3d_view_host CSPIndexBatch::getParticipationIndex(){
 }
 
 void CSPIndexBatch::createSlowImportanceIndexView(){
-     _SlowImportanceIndex._dev = real_type_3d_view("_SlowImportanceIndex",_nBatch, _n_variables, _n_processes);
+     _SlowImportanceIndex._dev = real_type_3d_view("_SlowImportanceIndex",_nBatch, _n_variables, _n_total_processes);
      _SlowImportanceIndex._host = Kokkos::create_mirror_view(Kokkos::HostSpace(), _SlowImportanceIndex._dev);
      _SlowImportanceIndex_need_sync = NoNeedSync;
 }
@@ -267,8 +267,10 @@ void CSPIndexBatch::createSlowImportanceIndexView(){
 
 
 void CSPIndexBatch::freeSlowImportanceIndexView(){
-     _SlowImportanceIndex._dev = real_type_3d_view();
-     _SlowImportanceIndex._host = real_type_3d_view_host();
+    if (_SlowImportanceIndex._dev.span() > 0)
+      _SlowImportanceIndex._dev = real_type_3d_view();
+    if (_SlowImportanceIndex._host.span() > 0)
+      _SlowImportanceIndex._host = real_type_3d_view_host();
      _SlowImportanceIndex_need_sync = NoNeedSync;
 }
 
@@ -290,9 +292,6 @@ void CSPIndexBatch::evalImportanceIndexSlow(const ordinal_type& team_size,
      createWorkView();
      Kokkos::fence();
 
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-     timer.reset();
-#endif
 
      index_csplib_device::evalCSPIndexBatch("CSPlib::evalSlowImportanceIndex::runDeviceBatch",
                                             policy,
@@ -300,14 +299,41 @@ void CSPIndexBatch::evalImportanceIndexSlow(const ordinal_type& team_size,
                                             _RoP, // input
                                             _SlowImportanceIndex._dev, //output
                                             _work);  // work
-//
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-    exec_space().fence();
-    const real_type t_eval_slow_indx = timer.seconds();
-    fprintf(fs, "%s: %20.14e, \n","\"Eval slow importance index\"", t_eval_slow_indx);
-#endif
+
 
     _SlowImportanceIndex_need_sync = NeedSyncToHost;
+}
+
+void CSPIndexBatch::evalImportanceIndexSlowFwdAndRev(const ordinal_type& team_size,
+                                            const ordinal_type& vector_size)
+{
+     Tines::ProfilingRegionScope region("CSPlib::evalImportanceIndexSlow");
+     policy_type policy(exec_space(), _nBatch, Kokkos::AUTO());
+     if ( team_size > 0 && vector_size > 0) {
+       policy = policy_type(exec_space(), _nBatch, team_size, vector_size);
+     }
+
+     if (_Alpha.span() == 0)
+         evalAlpha(team_size, vector_size);
+     if (_SlowImportanceIndex._dev.span() == 0){
+       createSlowImportanceIndexView();
+     }
+
+     createWorkView();
+     Kokkos::fence();
+
+     // negative because _RoP_rev is not negative
+     const real_type factor(-1);
+     index_csplib_device::evalCSPIndexBatch("CSPlib::evalSlowImportanceIndex::runDeviceBatch",
+                                            policy,
+                                            _Alpha, // input
+                                            _RoP_fwd, // input
+                                            _RoP_rev,
+                                            factor,
+                                            _SlowImportanceIndex._dev, //output
+                                            _work);  // work
+
+     _SlowImportanceIndex_need_sync = NeedSyncToHost;
 }
 
 void CSPIndexBatch::getImportanceIndexSlow(
@@ -339,15 +365,16 @@ CSPIndexBatch::real_type_3d_view_host CSPIndexBatch::getImportanceIndexSlow(){
 }
 
 void CSPIndexBatch::createFastImportantIndexView(){
-     _FastImportanceIndex._dev = real_type_3d_view("FastImportanceIndex",_nBatch, _n_variables, _n_processes);
+     _FastImportanceIndex._dev = real_type_3d_view("FastImportanceIndex",_nBatch, _n_variables, _n_total_processes);
      _FastImportanceIndex._host = Kokkos::create_mirror_view(Kokkos::HostSpace(), _FastImportanceIndex._dev);
      _FastImportanceIndex_need_sync = NoNeedSync;
 
 }
 
-
 void CSPIndexBatch::freeFastImportantIndexView(){
-     _FastImportanceIndex._dev = real_type_3d_view();
+     if (_FastImportanceIndex._dev.span() > 0)
+       _FastImportanceIndex._dev = real_type_3d_view();
+    if (_FastImportanceIndex._host.span() > 0)
      _FastImportanceIndex._host = real_type_3d_view_host();
 }
 
@@ -370,11 +397,6 @@ void CSPIndexBatch::evalImportanceIndexFast(const ordinal_type& team_size,
      createWorkView();
      Kokkos::fence();
 
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-     timer.reset();
-#endif
-
-
      index_csplib_device::evalCSPIndexBatch("CSPlib::evalFastImportantIndex::runDeviceBatch",
                                             policy,
                                             _Gamma, // input
@@ -382,11 +404,38 @@ void CSPIndexBatch::evalImportanceIndexFast(const ordinal_type& team_size,
                                             _FastImportanceIndex._dev, //output
                                             _work);  // work
 
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-    exec_space().fence();
-    const real_type t_eval_fast_indx = timer.seconds();
-    fprintf(fs, "%s: %20.14e \n","\"Eval fast importance index\"", t_eval_fast_indx);
-#endif
+    _FastImportanceIndex_need_sync = NeedSyncToHost;
+}
+
+void CSPIndexBatch::evalImportanceIndexFastFwdAndRev(const ordinal_type& team_size,
+                                            const ordinal_type& vector_size)
+{
+     Tines::ProfilingRegionScope region("CSPlib::evalImportanceIndexFast");
+     policy_type policy(exec_space(), _nBatch, Kokkos::AUTO());
+     if ( team_size > 0 && vector_size > 0) {
+      policy = policy_type(exec_space(), _nBatch, team_size, vector_size);
+     }
+
+     if (_Gamma.span() == 0)
+         evalGamma(team_size, vector_size);
+
+     if (_FastImportanceIndex._dev.span() == 0) {
+       createFastImportantIndexView();
+     }
+
+     createWorkView();
+     Kokkos::fence();
+
+    // negative because _RoP_rev is not negative
+     const real_type factor(-1);
+     index_csplib_device::evalCSPIndexBatch("CSPlib::evalFastImportantIndex::runDeviceBatch",
+                                            policy,
+                                            _Gamma, // input
+                                            _RoP_fwd, // input
+                                            _RoP_rev,
+                                            factor,
+                                            _FastImportanceIndex._dev, //output
+                                            _work);  // work
 
     _FastImportanceIndex_need_sync = NeedSyncToHost;
 }

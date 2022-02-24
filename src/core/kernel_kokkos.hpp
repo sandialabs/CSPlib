@@ -133,12 +133,14 @@ evalM(const MemberType &member,
       const real_type& rel_tol, // input relative tolerance
       const real_type& abs_tol, // input absolute tolerance
       const real_type_1d_view_type& error_csp, // work
+      const real_type_1d_view_type& delta_yfast,
       ordinal_type& NofDM) // output
 {
   // Maximun number of exhausted modes:
   // nElem number of elements constrains, conservation of mass
   // 1  conservation of enthalpy for adiabatic systems
   const ordinal_type nvars(state_vector.extent(0));
+  const real_type one(1.);
   ordinal_type MaxExM = nElem > 0 ? nvars - nElem -1 : nvars ;
 
   NofDM=-1;
@@ -146,10 +148,9 @@ evalM(const MemberType &member,
   // negative eigenvalues: exhausted modes cannot be bigger than number of eigen values
   ordinal_type no_of_neg_eig_val_real(0);
   Kokkos::parallel_reduce(
-    Kokkos::TeamThreadRange(member, nvars), [&](const int &i, int& update) {
-      if (eigenvalues_real_part(i) < 0.0) {
+    Kokkos::TeamVectorRange(member, nvars), [&](const int &i, int& update) {
+      if (eigenvalues_real_part(i) < 0.0)
         update++;
-      }
       // scalar error
       error_csp(i) = Tines::ats<real_type>::abs(state_vector(i)) * rel_tol + abs_tol;
   }, no_of_neg_eig_val_real);
@@ -157,56 +158,64 @@ evalM(const MemberType &member,
   member.team_barrier();
   MaxExM =  MaxExM < no_of_neg_eig_val_real ?  MaxExM : no_of_neg_eig_val_real;
 
+  ordinal_type exM(0);
 
-  Kokkos::single(Kokkos::PerTeam(member), [=](int &NofDM_local) {
-    ordinal_type exM(0);
-
-    for ( int M = 0; M < nvars; M++) { // searching M in each variable
-      // M is element position
-      //check if next eigenvalue is a complex conjugate
-      // we do not want to have an exhausted model between two equal eigen values
-      // with an equal real part
-      exM = M;
-      if (M < nvars-1) {
-        if  (eigenvalues_real_part(M)==eigenvalues_real_part(M+1) ) {
-          M += 1;
+  for ( int M = 0; M < nvars; M++) { // searching M in each variable
+    // M is element position
+    //check if next eigenvalue is a complex conjugate
+    // we do not want to have an exhausted model between two equal eigen values
+    // with an equal real part
+    exM = M;
+    if (M < nvars-1) {
+      if  (eigenvalues_real_part(M)==eigenvalues_real_part(M+1) ) {
+        M += 1;
           // if I am in the last model, I must quit because there is no \tau[_nvars+1]
-          if (M == nvars){
-            NofDM_local = nvars < MaxExM ? nvars : MaxExM;
-            M=nvars+1; // exit loop
-          }
+        if (M == nvars){
+            NofDM = nvars < MaxExM ? nvars : MaxExM;
+            // M=nvars+1; // exit loop
+            return;
         }
       }
+    }//if M< nvars-1
 
-      if (M != nvars+1) {
-        const ordinal_type Mp1 = M+1 < nvars-1 ? M+1 : nvars-1;
-        for (int i = 0; i < nvars; i++) { // loop over variables
-          real_type deltaYfast = 0;
-          for (size_t r = 0; r < Mp1  ; r++) {
-            deltaYfast += modal_amplitude(r) * A(i,r) *
-              ( -1. + Tines::ats<real_type>::exp(eigenvalues_real_part(r) *
-               time_scales(Mp1) ) ) / eigenvalues_real_part(r);
-          }
+    const ordinal_type Mp1 = M+1 < nvars-1 ? M+1 : nvars-1;
 
-        if (Tines::ats<real_type>::abs(deltaYfast) > error_csp(i)) {
-          //check elements
-           NofDM_local = exM < MaxExM ? exM : MaxExM;
-           M = nvars+1; // exit loop
-        }
+    Kokkos::parallel_for(
+        Kokkos::TeamThreadRange(member, nvars), [&](const ordinal_type &i) {
+      real_type d_yfast(0);
+      Kokkos::parallel_reduce(
+        Kokkos::ThreadVectorRange(member, Mp1),
+        [&](const ordinal_type &r, real_type& update) {
+          update += modal_amplitude(r) * A(i,r) *
+                ( -one + Tines::ats<real_type>::exp(eigenvalues_real_part(r) *
+                 time_scales(Mp1) ) ) / eigenvalues_real_part(r);
+      }, d_yfast);
+      delta_yfast(i) = d_yfast;
 
-      }
-      }
+    });
 
+    member.team_barrier();
+    ordinal_type count_yfast(0);
+    Kokkos::parallel_reduce(
+      Kokkos::TeamVectorRange(member, nvars),
+      [&](const ordinal_type &i, ordinal_type& update) {
+        if (Tines::ats<real_type>::abs(delta_yfast(i)) > error_csp(i))
+          update ++;
+    }, count_yfast);
+
+    if (count_yfast > 0) {
+      // at least one delta_yfast is bigger than error_csp
+      //       //check elements
+      NofDM = exM < MaxExM ? exM : MaxExM;
+      return; // exit loop
     }
 
-    // if searching loop does not find M
-    if (NofDM_local == -1 ) {
-      NofDM_local = nvars < MaxExM ? nvars : MaxExM ;
-    }
 
-    }, NofDM);
-  member.team_barrier();
-
+  } // end searching M in each variable
+  
+  // if searching loop does not find M
+  if (NofDM == -1 )
+    NofDM = nvars < MaxExM ? nvars : MaxExM ;
 
 
 }
@@ -325,6 +334,7 @@ evalMBatch(const std::string& profile_name,
               const real_type& rel_tol, // input relative tolerance
               const real_type& abs_tol, // input absolute tolerance
               const real_type_2d_view_type& error_csp, // work
+              const real_type_2d_view_type& delta_yfast, // work
               const ordinal_type_1d_view_type& NofDM) // output
 {
   Tines::ProfilingRegionScope region(profile_name);
@@ -343,10 +353,13 @@ evalMBatch(const std::string& profile_name,
      const real_type_1d_view_type error_csp_at_i = Kokkos::subview(error_csp, i, Kokkos::ALL());
      const real_type_1d_view_type state_vector_at_i = Kokkos::subview(state_vector, i, Kokkos::ALL());
      const ordinal_type_0d_view_type NofDM_at_i = Kokkos::subview(NofDM, i);
+     const real_type_1d_view_type delta_yfast_at_i = Kokkos::subview(delta_yfast, i, Kokkos::ALL());
+
+
 
      evalM(member, A_at_i, eigenvalues_real_part_at_i, modal_amplitude_at_i,
                           time_scales_at_i, state_vector_at_i, nElem, rel_tol, abs_tol,
-                          error_csp_at_i, NofDM_at_i());
+                          error_csp_at_i, delta_yfast_at_i,  NofDM_at_i());
   });
 
 }

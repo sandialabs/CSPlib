@@ -3,8 +3,8 @@ CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
-Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS). 
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains 
+Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
 certain rights in this software.
 
 This file is part of CSPlib. CSPlib is open-source software: you can redistribute it
@@ -400,7 +400,7 @@ void ChemElemTCSTR_TChem::getRoPDBonHost(std::vector<std::vector <double> >& RoP
 
 void ChemElemTCSTR_TChem::setCSTR( const std::string& input_condition_file_name,
                                      const double& mdotIn,  const double& Vol,
-                                     const double& Acat, const bool& isoThermic )
+                                     const double& Acat, const bool& isothermal )
 {
   // cstr need initial condition of simulation
   real_type_2d_view_host state_host_initial_condition;
@@ -433,8 +433,8 @@ void ChemElemTCSTR_TChem::setCSTR( const std::string& input_condition_file_name,
   _cstr.mdotIn = mdotIn; // inlet mass flow kg/s
   _cstr.Vol    = Vol; // volumen of reactor m3
   _cstr.Acat   = Acat; // Catalytic area m2: chemical active area
-  _cstr.isoThermic = 1;
-  if (isoThermic) _cstr.isoThermic = 0;
+  _cstr.isothermal = 1;
+  if (isothermal) _cstr.isothermal = 0;
   _cstr.pressure = sv_at_i.Pressure();
   _cstr.Yi = real_type_1d_view("Mass fraction at inlet", _Ngas_species);
   Kokkos::deep_copy(_cstr.Yi, Ys);
@@ -542,8 +542,8 @@ void ChemElemTCSTR_TChem::evalSmatrix()
     // surface equations
    const auto Nsurface_equations(_Nsurface_equations);
    const auto Nsurface_reactions(_Nsurface_reactions);
-   auto Cmat(_Cmat);
-   auto vsurfki(kmcdSurf.vsurfki);
+   const auto Cmat=_Cmat;
+   const auto vsurfki=kmcdSurf.vsurfki;
    const auto site_density = kmcdSurf.sitedensity*real_type(10.0);
 
    Kokkos::parallel_for(

@@ -37,7 +37,6 @@ SET(CSPlib_LINK_LIBRARIES CSPlib)
 #
 # Options : use CSPlib prefix
 #
-OPTION(CSPLIB_MESUARE_WALL_TIME "Flag to save wall times" OFF)
 OPTION(CSPLIB_ENABLE_TEST "Flag to enable unit tests" OFF)
 OPTION(TCHEM_INSTALL_PATH "Path to TChem installation")
 OPTION(KOKKOS_INSTALL_PATH "Path to Kokkos installation")

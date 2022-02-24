@@ -122,7 +122,7 @@ class ChemElemODETChem : public Model
 
   void getRoP(std::vector<std::vector <double> >& RoP);
 
-  void getRoPDevice(real_type_2d_view& RoP);
+  void getRoPDevice(real_type_2d_view& RoP_fwd, real_type_2d_view& RoP_rev );
 
   void getSmatrix(std::vector < std::vector
                           <std::vector <double> > >& Smatrixdb);
@@ -132,7 +132,7 @@ class ChemElemODETChem : public Model
   void getSourceVectorDevice(real_type_2d_view& rhs);
 
   int evalSourceVector();
-  
+
   // model class does not all add new inputs because of virtual function
   void evalSourceVectorDevice(const ordinal_type& team_size=-1,
                               const ordinal_type& vector_size=-1);

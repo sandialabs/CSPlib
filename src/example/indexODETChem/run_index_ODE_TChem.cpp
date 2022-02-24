@@ -3,8 +3,8 @@ CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
-Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS). 
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains 
+Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
 certain rights in this software.
 
 This file is part of CSPlib. CSPlib is open-source software: you can redistribute it
@@ -198,9 +198,11 @@ int main(int argc, char *argv[]) {
     // model class
     std::string jac_name = firstname + "_jac.dat";
     std::string RoP_name = firstname + "_RoP.dat";
+    std::string Smatrix_name = firstname + "_Smatrix.dat";
 
     FILE *fout_jac = fopen ( (jac_name).c_str(), "w" );
     FILE *fout_RoP = fopen ( (RoP_name).c_str(), "w" );
+    FILE * fout_smatrix = fopen ( (Smatrix_name).c_str(), "w" );
 
     // kernel class
     std::string m_file_name = firstname + "_m.dat";
@@ -464,6 +466,14 @@ int main(int argc, char *argv[]) {
       }
       fprintf(fout_RoP,"\n");
 
+
+      for (int k = 0; k<ndiff_var; k++ ) {
+        for (int j = 0; j<(nTotalReactions); j++ ) {
+          fprintf(fout_smatrix,"%15.10e \t", Smat[k][j]);
+        }
+        fprintf(fout_smatrix,"\n");
+      }
+
       // eigenvector left
       for (int k = 0; k<ndiff_var; k++ ) {
         for (int j = 0; j<(ndiff_var); j++ ) {
@@ -617,6 +627,7 @@ int main(int argc, char *argv[]) {
     // model class
     fclose(fout_jac);
     fclose(fout_RoP);
+    fclose(fout_smatrix);
 
     // kernel class
     fclose(fout);

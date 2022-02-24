@@ -58,7 +58,7 @@ struct IndexComputation {
   evalCSPIndex(const MemberType &member,
                const real_type_2d_view_type& Beta, // input
                const real_type_1d_view_type& RoP, // input
-               const real_type_2d_view_type& CPSIndex, //output
+               const real_type_2d_view_type& CSPIndex, //output
                const real_type_1d_view_type& deno)
   {
     /*
@@ -88,12 +88,12 @@ struct IndexComputation {
         if (deno(i) != 0) {
           Kokkos::parallel_for(
             Kokkos::ThreadVectorRange(member, n_processes), [&](const int &j) {
-              CPSIndex(i,j) = Beta(i,j) * RoP(j) / deno(i) ;
+              CSPIndex(i,j) = Beta(i,j) * RoP(j) / deno(i) ;
           });
         } else {
             Kokkos::parallel_for(
               Kokkos::ThreadVectorRange(member, n_processes), [&](const int &j) {
-                CPSIndex(i,j) = 0;
+                CSPIndex(i,j) = 0;
             });
         }
       });
@@ -101,6 +101,75 @@ struct IndexComputation {
 
 
   }
+
+  template <typename MemberType>
+  KOKKOS_INLINE_FUNCTION static void
+  evalCSPIndex(const MemberType &member,
+               const real_type_2d_view_type& Beta, // input
+               const real_type_1d_view_type& RoP_fwd, // input
+               const real_type_1d_view_type& RoP_rev, // input
+               const real_type& factor,
+               const real_type_2d_view_type& CSPIndex, //output
+               const real_type_1d_view_type& deno)
+  {
+    /*
+    participation index for all modes
+                          (b^m . S_k) . r^k
+    P(m,k)           = -----------------------------         m=1,N
+                       sum_kk | (b^m . S_kk) . r^kk |
+    */
+
+    const ordinal_type n_variables(Beta.extent(0));
+    const ordinal_type n_processes(Beta.extent(1));
+
+    Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(member, n_variables), [&](const int &i) {
+        real_type suma(0);
+        Kokkos::parallel_reduce(
+          Kokkos::ThreadVectorRange(member, n_processes), [&](const int &j, real_type& update) {
+            update += Tines::ats<real_type>::abs( Beta(i,j) * RoP_fwd(j) ) +
+                      Tines::ats<real_type>::abs( Beta(i,j) * factor * RoP_rev(j) );
+      }, suma );
+      deno(i) = suma ;
+    });
+
+    member.team_barrier();
+
+    Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(member, n_variables), [&](const int &i) {
+        Kokkos::parallel_for(
+          Kokkos::ThreadVectorRange(member, n_processes), [=](const int &j) {
+            CSPIndex(i,j) = Beta(i,j) * RoP_fwd(j) / deno(i) ;
+      });
+    });
+
+    Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(member, n_variables), [&](const int &i) {
+        Kokkos::parallel_for(
+          Kokkos::ThreadVectorRange(member, n_processes), [=](const int &j) {
+            CSPIndex(i,j + n_processes) = Beta(i,j) * factor * RoP_rev(j) / deno(i) ;
+        });
+    });
+
+    member.team_barrier();
+    Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(member, n_variables), [&](const int &i) {
+        Kokkos::parallel_for(
+          Kokkos::ThreadVectorRange(member, n_processes), [=](const int &j) {
+            if (deno(i) == 0)
+            {
+              CSPIndex(i,j) = 0;
+              CSPIndex(i,j+ n_processes) = 0;
+            }
+
+        });
+    });
+    member.team_barrier();
+
+
+  }
+
+
 
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION static void
@@ -239,6 +308,35 @@ struct IndexComputation {
 
   }
   //
+  template<typename PolicyType>
+  static void
+  evalCSPIndexBatch(const std::string& profile_name,
+                const PolicyType& policy,
+                const real_type_3d_view_type& Beta, // input
+                const real_type_2d_view_type& RoP_fwd, // input
+                const real_type_2d_view_type& RoP_rev, // input
+                const real_type& factor,
+                const real_type_3d_view_type& CSPIndex, //output
+                const real_type_2d_view_type& deno) // work
+  {
+    Tines::ProfilingRegionScope region(profile_name);
+    using policy_type = PolicyType;
+
+    Kokkos::parallel_for(
+     profile_name,
+     policy,
+     KOKKOS_LAMBDA(const typename policy_type::member_type& member) {
+       const ordinal_type i = member.league_rank();
+       const real_type_1d_view_type RoP_fwd_at_i = Kokkos::subview(RoP_fwd, i, Kokkos::ALL());
+       const real_type_1d_view_type RoP_rev_at_i = Kokkos::subview(RoP_rev, i, Kokkos::ALL());
+       const real_type_1d_view_type deno_at_i = Kokkos::subview(deno, i, Kokkos::ALL());
+       const real_type_2d_view_type Beta_at_i = Kokkos::subview(Beta, i, Kokkos::ALL(), Kokkos::ALL());
+       const real_type_2d_view_type CSPIndex_at_i = Kokkos::subview(CSPIndex, i, Kokkos::ALL(), Kokkos::ALL());
+
+       evalCSPIndex(member, Beta_at_i, RoP_fwd_at_i, RoP_rev_at_i, factor, CSPIndex_at_i, deno_at_i);
+     });
+  }
+
   template<typename PolicyType>
   static void
   evalCSPIndexBatch(const std::string& profile_name,

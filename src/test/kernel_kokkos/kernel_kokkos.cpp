@@ -3,8 +3,8 @@ CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
-Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS). 
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains 
+Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
 certain rights in this software.
 
 This file is part of CSPlib. CSPlib is open-source software: you can redistribute it
@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
     // Sorting eigen values and vectors in ascending order
     // of, sign(eig_val_real)*Mod(eig_val_real + i * eig_val_imag)
     ker.evalEigenValVec();
-    
+
     ker.getEigenValVec(eig_val_real, eig_val_imag, eig_vec_L, eig_vec_R);
 
     ker.setCSPVec(); // A = eig_vec_R and B = A^{-1}
@@ -120,6 +120,8 @@ int main(int argc, char* argv[])
     real_type_1d_view_type time_scales("time_scales", n_variables);
     real_type_1d_view_type modal_amplitude("modal_amplitude", n_variables);
     real_type_1d_view_type error_csp("error_csp", n_variables);
+    real_type_1d_view_type delta_yfast("delta_yfast", n_variables);
+
     ordinal_type NofDM_kokkos;
 
     CSP::construct_2D_from_1D(n_variables, n_variables, csp_vec_R, csp_vec_R_2d);
@@ -139,7 +141,7 @@ int main(int argc, char* argv[])
 
     kernel_csplib::evalM(member, A, eigenvalues_real_part, modal_amplitude,
                          time_scales, source, nElem, csp_rtolvar, csp_atolvar,
-                         error_csp, NofDM_kokkos);
+                         error_csp, delta_yfast,  NofDM_kokkos);
 
     //
     auto compareKernel = [](const std::string &label, std::vector<std::vector<double> >  &A, real_type_2d_view_type &B) {

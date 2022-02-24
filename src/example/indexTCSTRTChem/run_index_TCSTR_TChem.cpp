@@ -3,8 +3,8 @@ CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
-Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS). 
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains 
+Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
 certain rights in this software.
 
 This file is part of CSPlib. CSPlib is open-source software: you can redistribute it
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
   double Vol(0.00013470);
   double Acat (0.0013074);
   bool verbose(false);
-  bool isoThermic(false);
+  bool isothermal(false);
   bool compute_M_wo_exp(false);
 
   std::string chemFile(prefixPath + "chem.inp");
@@ -67,8 +67,8 @@ int main(int argc, char *argv[]) {
   opts.set_option<double>("Acat", "Catalytic area [m2]", &Acat);
   opts.set_option<double>("Vol", "Reactor Volumen [m3]", &Vol);
   opts.set_option<double>("mdotIn", "Inlet mass flow rate [kg/s]", &mdotIn);
-  opts.set_option<bool>("isoThermic", "if True, reaction is isotermic", &isoThermic);
-  opts.set_option<bool>("computeM_WoExpFactor", "if True, reaction is isotermic", &compute_M_wo_exp);
+  opts.set_option<bool>("isothermal", "if True, reaction is isothermal", &isothermal);
+  opts.set_option<bool>("computeM_WoExpFactor", "if True, reaction is number of exhausted model with exponential factor ", &compute_M_wo_exp);
   opts.set_option<int>
   ("useAnalyticalJacobian",
    "Use a analytical jacobian; 0: sacado analytical jacobian, 1: numerical jacobian", &use_analytical_Jacobian);
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
       fclose(fout);
     }
     // set parameter for CSTR
-    model.setCSTR(initialConditionFile, mdotIn,  Vol, Acat, isoThermic  );
+    model.setCSTR(initialConditionFile, mdotIn,  Vol, Acat, isothermal  );
     //computes RHS on devices
     model.evalSourceVector();
     std::vector<double> source(ndiff_var);

@@ -92,6 +92,7 @@ int main(int argc, char *argv[]) {
   bool write_files(false);
   int use_analytical_Jacobian(0);
   bool use_yaml_settings_file(false);
+  bool compute_csp_indices(true);
 
   std::string variable1("Temperature");
   std::string variable2("CH4");
@@ -121,7 +122,8 @@ int main(int argc, char *argv[]) {
   ("device-seeting-file", "Device setting file name e.g., csp_device_settings.yaml", &csp_device_settings);
   opts.set_option<bool>(
       "use-device-setting-file", "If true, read settings for Device from a the yaml file csp_device_settings.yaml", &use_yaml_settings_file);
-
+  opts.set_option<bool>(
+      "compute-csp-indices", "If true, computes fast/slow importances and participation indices", &compute_csp_indices);
   opts.set_option<int>("increment", " increment in database, e.g. 2  ", &increment);
   opts.set_option<std::string>
   ("variable1", "Compute Importance index for variable  e.g., Temperature", &variable1);
@@ -202,10 +204,9 @@ int main(int argc, char *argv[]) {
 
     }
 
-
     {
     CSP::ScopeGuard guard(argc, argv);
-    
+
     std::string time_file_name = firstname + "_csp_times.dat";
     FILE *fout_times = fopen (time_file_name.c_str(), "w" );
 
@@ -224,7 +225,6 @@ int main(int argc, char *argv[]) {
     fprintf(fout_times, "%s: %20.14e, \n","\"Int model class\"", t_int_model_class);
 
     real_type t_read_state(0);
-
 
     if (useTChemSolution) {
       // read a data base from a TChem++ Ingition solution
@@ -249,8 +249,6 @@ int main(int argc, char *argv[]) {
     // get number of variables in the ODE system
     auto ndiff_var = model.getNumOfVariables();
     std::cout<< "ndiff_var = "<< ndiff_var <<"\n";
-
-
 
     //save species names in a file to be use in post-processing
     {
@@ -330,9 +328,10 @@ int main(int argc, char *argv[]) {
     const int nSample = state_dev.extent(0);
 
 
-    real_type_2d_view RoPdb;
+    real_type_2d_view RoPdb_fwd;
+    real_type_2d_view RoPdb_rev;
     timer.reset();
-    model.getRoPDevice(RoPdb);
+    model.getRoPDevice(RoPdb_fwd, RoPdb_rev);
     exec_space_instance.fence();
     const real_type t_get_rop = timer.seconds();
     fprintf(fout_times, "%s: %20.14e, \n","\"Get rate of progress\"", t_get_rop);
@@ -399,12 +398,12 @@ int main(int argc, char *argv[]) {
     fprintf(fout_times, "%s: %20.14e, \n","\"Compute eigensolution\"", t_comp_eigen_solution);
 
     // sort eigensolution w.r.t magnitude of eigenvalues
-    // SET_TEAM_VECTOR_SIZE("sortEigenSolution")
-    // timer.reset();
-    // kernelBatch.sortEigenSolution(team_size, vector_size);
-    // exec_space_instance.fence();
-    // const real_type t_sort_eigen_values_vectors = timer.seconds();
-    // fprintf(fout_times, "%s: %20.14e, \n","\"Sort eigensolution\"", t_sort_eigen_values_vectors);
+    SET_TEAM_VECTOR_SIZE("sortEigenSolution")
+    timer.reset();
+    kernelBatch.sortEigenSolution(team_size, vector_size);
+    exec_space_instance.fence();
+    const real_type t_sort_eigen_values_vectors = timer.seconds();
+    fprintf(fout_times, "%s: %20.14e, \n","\"Sort eigensolution\"", t_sort_eigen_values_vectors);
 
     SET_TEAM_VECTOR_SIZE("evalCSPbasisVectors")
     // Setting CSP vectors:
@@ -414,21 +413,12 @@ int main(int argc, char *argv[]) {
     const real_type t_set_csp_vectors = timer.seconds();
     fprintf(fout_times, "%s: %20.14e, \n","\"Set csp vectors\"", t_set_csp_vectors);
 
-    real_type_3d_view B = kernelBatch.getLeftCSPVecDevice();
-    real_type_3d_view A = kernelBatch.getRightCSPVecDevice();
-
     SET_TEAM_VECTOR_SIZE("evalCSP_Pointers")
     timer.reset();
     kernelBatch.evalCSP_Pointers(team_size, vector_size);
     exec_space_instance.fence();
     const real_type t_eval_csp_pointers = timer.seconds();
     fprintf(fout_times, "%s: %20.14e, \n","\"Eval csp pointer\"", t_eval_csp_pointers);
-
-    timer.reset();
-    real_type_3d_view_host csp_pointers_host  = kernelBatch.getCSPPointers();
-    exec_space_instance.fence();
-    const real_type t_get_csp_pointers = timer.seconds();
-    fprintf(fout_times, "%s: %20.14e, \n","\"Get csp pointer\"", t_get_csp_pointers);
 
     SET_TEAM_VECTOR_SIZE("evalTimeScales")
     timer.reset();
@@ -437,12 +427,6 @@ int main(int argc, char *argv[]) {
     const real_type t_eval_tau = timer.seconds();
     fprintf(fout_times, "%s: %20.14e, \n","\"Eval time scales\"", t_eval_tau);
 
-    timer.reset();
-    real_type_2d_view_host time_scales_host = kernelBatch.getTimeScales();
-    exec_space_instance.fence();
-    const real_type t_get_tau = timer.seconds();
-    fprintf(fout_times, "%s: %20.14e, \n","\"Get time scales\"", t_get_tau);
-
     SET_TEAM_VECTOR_SIZE("evalModalAmp")
     timer.reset();
     kernelBatch.evalModalAmp(team_size, vector_size);
@@ -450,87 +434,181 @@ int main(int argc, char *argv[]) {
     const real_type t_eval_mode = timer.seconds();
     fprintf(fout_times, "%s: %20.14e, \n","\"Eval amplitude of modes\"", t_eval_mode);
 
-    timer.reset();
-    real_type_2d_view_host modal_ampl_host = kernelBatch.getModalAmp();
-    exec_space_instance.fence();
-    const real_type t_get_mode = timer.seconds();
-    fprintf(fout_times, "%s: %20.14e, \n","\"Get amplitude of modes\"", t_get_mode);
-
     SET_TEAM_VECTOR_SIZE("evalM")
     // Exhausted mode
     timer.reset();
     kernelBatch.evalM(team_size, vector_size);
     exec_space_instance.fence();
     const real_type t_eval_m = timer.seconds();
-    fprintf(fout_times, "%s: %20.14e, \n","\"Eval M\"", t_eval_m);
 
-    timer.reset();
-    ordinal_type_1d_view_host M_host = kernelBatch.getM();
-    exec_space_instance.fence();
-    const real_type t_get_m = timer.seconds();
-    fprintf(fout_times, "%s: %20.14e \n","\"Get M\"", t_get_m);
-
-    fprintf(fout_times, "}, \n ");// end kernel time
-    fprintf(fout_times, " \"Index Class\": \n {\n ");
-
-    ordinal_type_1d_view M = kernelBatch.getMDevice();
-
-    printf("Working in index ...\n");
-
-    timer.reset();
-    CSPIndexBatch indexBatch( A, B, Smatrixdb, RoPdb, M );
-    exec_space_instance.fence();
-    const real_type t_int_index_class = timer.seconds();
-    fprintf(fout_times, "%s: %20.14e, \n","\"Init index class\"", t_int_index_class);
-
-    SET_TEAM_VECTOR_SIZE("evalParticipationIndex")
-    timer.reset();
-    indexBatch.evalParticipationIndex(team_size, vector_size);
-    exec_space_instance.fence();
-    const real_type t_eval_part_indx = timer.seconds();
-    fprintf(fout_times, "%s: %20.14e, \n","\"Eval participation index\"", t_eval_part_indx);
-
-    real_type_3d_view_host PartIndex;
-    timer.reset();
-    PartIndex = indexBatch.getParticipationIndex();
-    exec_space_instance.fence();
-    const real_type t_get_part_indx = timer.seconds();
-    fprintf(fout_times, "%s: %20.14e, \n","\"Get participation index\"", t_get_part_indx);
-
-    SET_TEAM_VECTOR_SIZE("evalImportanceIndexSlow")
-    timer.reset();
-    indexBatch.evalImportanceIndexSlow(team_size, vector_size);
-    exec_space_instance.fence();
-    const real_type t_eval_slow_indx = timer.seconds();
-    fprintf(fout_times, "%s: %20.14e,\n","\"Eval slow importance index\"", t_eval_slow_indx);
-
-    real_type_3d_view_host SlowImpoIndex;
-    timer.reset();
-    SlowImpoIndex =  indexBatch.getImportanceIndexSlow();
-    exec_space_instance.fence();
-    const real_type t_get_slow_indx = timer.seconds();
-    fprintf(fout_times, "%s: %20.14e, \n","\"Get slow importance index\"", t_get_slow_indx);
-
-    SET_TEAM_VECTOR_SIZE("evalImportanceIndexFast")
-    timer.reset();
-    indexBatch.evalImportanceIndexFast(team_size, vector_size);
-    exec_space_instance.fence();
-    const real_type t_eval_fast_indx = timer.seconds();
-    fprintf(fout_times, "%s: %20.14e,\n","\"Eval fast importance index\"", t_eval_fast_indx);
-
-    real_type_3d_view_host FastImpoIndex;
-    timer.reset();
-    FastImpoIndex = indexBatch.getImportanceIndexFast();
-    exec_space_instance.fence();
-    const real_type t_get_fast_indx = timer.seconds();
-    fprintf(fout_times, "%s: %20.14e \n","\"Get fast importance index\"", t_get_fast_indx);
-    fprintf(fout_times, "}, \n ");// end kernel time
-
-
-    timer.reset();
     if (write_files)
     {
+      // note that this line does not have a comma.
+      fprintf(fout_times, "%s: %20.14e, \n","\"Eval M\"", t_eval_m);
+    } else
+    {
+      fprintf(fout_times, "%s: %20.14e\n","\"Eval M\"", t_eval_m);
+    }
 
+
+    real_type_3d_view_host csp_pointers_host;
+    real_type_2d_view_host time_scales_host;
+    ordinal_type_1d_view_host M_host;
+    real_type_2d_view_host modal_ampl_host;
+
+    if (write_files)
+    {
+      timer.reset();
+      csp_pointers_host  = kernelBatch.getCSPPointers();
+      exec_space_instance.fence();
+      const real_type t_get_csp_pointers = timer.seconds();
+      fprintf(fout_times, "%s: %20.14e, \n","\"Get csp pointer\"", t_get_csp_pointers);
+
+      timer.reset();
+      time_scales_host = kernelBatch.getTimeScales();
+      exec_space_instance.fence();
+      const real_type t_get_tau = timer.seconds();
+      fprintf(fout_times, "%s: %20.14e, \n","\"Get time scales\"", t_get_tau);
+
+      timer.reset();
+      modal_ampl_host = kernelBatch.getModalAmp();
+      exec_space_instance.fence();
+      const real_type t_get_mode = timer.seconds();
+      fprintf(fout_times, "%s: %20.14e, \n","\"Get amplitude of modes\"", t_get_mode);
+
+
+      timer.reset();
+      M_host = kernelBatch.getM();
+      exec_space_instance.fence();
+      const real_type t_get_m = timer.seconds();
+      fprintf(fout_times, "%s: %20.14e \n","\"Get M\"", t_get_m);
+    }
+
+    fprintf(fout_times, "}, \n ");// end kernel time
+    ordinal_type_1d_view M = kernelBatch.getMDevice();
+    real_type_3d_view B = kernelBatch.getLeftCSPVecDevice();
+    real_type_3d_view A = kernelBatch.getRightCSPVecDevice();
+
+    if (compute_csp_indices) {
+
+      fprintf(fout_times, " \"Index Class\": \n {\n ");
+
+      printf("Working in index ...\n");
+
+      timer.reset();
+      CSPIndexBatch indexBatch( A, B, Smatrixdb, RoPdb_fwd, RoPdb_rev, M );
+      exec_space_instance.fence();
+      const real_type t_int_index_class = timer.seconds();
+      fprintf(fout_times, "%s: %20.14e, \n","\"Init index class\"", t_int_index_class);
+
+      SET_TEAM_VECTOR_SIZE("evalParticipationIndex")
+      timer.reset();
+      indexBatch.evalParticipationIndexFwdAndRev(team_size, vector_size);
+      exec_space_instance.fence();
+      const real_type t_eval_part_indx = timer.seconds();
+      fprintf(fout_times, "%s: %20.14e, \n","\"Eval participation index\"", t_eval_part_indx);
+
+      if (!write_files)
+        indexBatch.freeParticipationIndexView();
+
+      SET_TEAM_VECTOR_SIZE("evalImportanceIndexSlow")
+      timer.reset();
+      indexBatch.evalImportanceIndexSlowFwdAndRev(team_size, vector_size);
+      exec_space_instance.fence();
+      const real_type t_eval_slow_indx = timer.seconds();
+      fprintf(fout_times, "%s: %20.14e,\n","\"Eval slow importance index\"", t_eval_slow_indx);
+
+      if (!write_files)
+        indexBatch.freeSlowImportanceIndexView();
+
+      SET_TEAM_VECTOR_SIZE("evalImportanceIndexFast")
+      timer.reset();
+      indexBatch.evalImportanceIndexFastFwdAndRev(team_size, vector_size);
+      exec_space_instance.fence();
+      const real_type t_eval_fast_indx = timer.seconds();
+      if (write_files)
+      {
+        // note that this lines has a comma!
+        fprintf(fout_times, "%s: %20.14e,\n","\"Eval fast importance index\"", t_eval_fast_indx);
+      } else
+      {
+        fprintf(fout_times, "%s: %20.14e\n","\"Eval fast importance index\"", t_eval_fast_indx);
+      }
+      if (!write_files)
+        indexBatch.freeFastImportantIndexView();
+
+      if (write_files)
+      {
+        real_type_3d_view_host SlowImpoIndex;
+        real_type_3d_view_host FastImpoIndex;
+        real_type_3d_view_host PartIndex;
+
+        timer.reset();
+        SlowImpoIndex =  indexBatch.getImportanceIndexSlow();
+        exec_space_instance.fence();
+        const real_type t_get_slow_indx = timer.seconds();
+        fprintf(fout_times, "%s: %20.14e, \n","\"Get slow importance index\"", t_get_slow_indx);
+
+        timer.reset();
+        PartIndex = indexBatch.getParticipationIndex();
+        exec_space_instance.fence();
+        const real_type t_get_part_indx = timer.seconds();
+        fprintf(fout_times, "%s: %20.14e, \n","\"Get participation index\"", t_get_part_indx);
+
+        timer.reset();
+        FastImpoIndex = indexBatch.getImportanceIndexFast();
+        exec_space_instance.fence();
+        const real_type t_get_fast_indx = timer.seconds();
+        fprintf(fout_times, "%s: %20.14e \n","\"Get fast importance index\"", t_get_fast_indx);
+
+        // index class
+        std::string P_ik_name = firstname + "_ParticipationIndex.dat";
+        std::string Islow_jk_name = firstname + "_SlowImportanceIndex.dat";
+        std::string Ifast_jk_name = firstname + "_FastImportanceIndex.dat";
+
+        FILE *fout_Pim = fopen ( (P_ik_name).c_str(), "w" );
+        FILE *fout_Isi = fopen ( (Islow_jk_name).c_str(), "w" );
+        FILE *fout_Ifn = fopen ( (Ifast_jk_name).c_str(), "w" );
+
+        for (size_t i = 0; i < nSample; i++) {
+          //Participation index
+          for (int k = 0; k<ndiff_var; k++ ) {
+            for (int j = 0; j<(nTotalReactions); j++ ) {
+              fprintf(fout_Pim,"%15.10e \t", PartIndex(i,k,j));
+             }
+            fprintf(fout_Pim,"\n");
+          }
+          //
+          // Slow importance index
+          for (int k = 0; k<ndiff_var; k++ ) {
+            for (int j = 0; j<(nTotalReactions); j++ ) {
+              fprintf(fout_Isi,"%15.10e \t", SlowImpoIndex(i,k,j));
+            }
+          fprintf(fout_Isi,"\n");
+          }
+
+          //
+          //Fast importance index
+          for (int k = 0; k<ndiff_var; k++ ) {
+            for (int j = 0; j<(nTotalReactions); j++ ) {
+              fprintf(fout_Ifn,"%15.10e \t", FastImpoIndex(i,k,j));
+            }
+            fprintf(fout_Ifn,"\n");
+          }
+        }
+
+        fclose(fout_Pim);
+        fclose(fout_Isi);
+        fclose(fout_Ifn);
+
+      }
+
+      fprintf(fout_times, "}, \n ");// end index time
+
+    }
+
+    if (write_files)
+    {
       // kernel class
       std::string m_file_name = firstname + "_m.dat";
       std::string tau_file_name = firstname + "_tau.dat";
@@ -546,7 +624,9 @@ int main(int argc, char *argv[]) {
 
       std::string RoP_name = firstname + "_RoP.dat";
       std::string source_name = firstname + "_source.dat";
+      std::string Smatrix_name = firstname + "_Smatrix.dat";
 
+      FILE * fout_smatrix = fopen ( (Smatrix_name).c_str(), "w" );
       FILE *fout_RoP = fopen ( (RoP_name).c_str(), "w" );
       FILE *fout_source = fopen ( (source_name).c_str(), "w" );
 
@@ -558,16 +638,7 @@ int main(int argc, char *argv[]) {
       std::string eig_vec_R_file_name = firstname + "_eig_vec_R.dat";
       FILE *fout_eig_vec_R = fopen ( (eig_vec_R_file_name).c_str(), "w" );
 
-      // index class
-      std::string P_ik_name = firstname + "_ParticipationIndex.dat";
-      std::string Islow_jk_name = firstname + "_SlowImportanceIndex.dat";
-      std::string Ifast_jk_name = firstname + "_FastImportanceIndex.dat";
       std::string cspp_ij_name = firstname + "_cspPointers.dat";
-
-
-      FILE *fout_Pim = fopen ( (P_ik_name).c_str(), "w" );
-      FILE *fout_Isi = fopen ( (Islow_jk_name).c_str(), "w" );
-      FILE *fout_Ifn = fopen ( (Ifast_jk_name).c_str(), "w" );
       FILE *fout_cspP = fopen ( (cspp_ij_name).c_str(), "w" );
 
       real_type_3d_view_host A_host("A host", nSample, ndiff_var, ndiff_var );
@@ -578,24 +649,33 @@ int main(int argc, char *argv[]) {
       printf("Writing files ...\n");
 
       // rate of progress
-      auto RoPdb_host = Kokkos::create_mirror_view(RoPdb);
-      Kokkos::deep_copy(RoPdb_host, RoPdb);
+      auto RoPdb_fwd_host = Kokkos::create_mirror_view(RoPdb_fwd);
+      Kokkos::deep_copy(RoPdb_fwd_host, RoPdb_fwd);
 
+      auto RoPdb_rev_host = Kokkos::create_mirror_view(RoPdb_rev);
+      Kokkos::deep_copy(RoPdb_rev_host, RoPdb_rev);
 
-      {
+      auto Smatrix_host = Kokkos::create_mirror_view(Smatrixdb);
+      Kokkos::deep_copy(Smatrix_host,Smatrixdb);
 
       for (size_t i = 0; i < nSample; i++) {
+        // s matrix
+        for (int k = 0; k<Smatrix_host.extent(1); k++ ) {
+          for (int j = 0; j<Smatrix_host.extent(2); j++ ) {
+            fprintf(fout_smatrix,"%15.10e \t", Smatrix_host(i,k,j));
+          }
+          fprintf(fout_smatrix,"\n");
+        }
+
         // eig_val_real
-      for (int k = 0; k<ndiff_var; k++ )
-        fprintf(fout_eig_val_real,"%20.14e \t", eigenvalues_real_part_host(i,k) );
-      fprintf(fout_eig_val_real,"\n");
+        for (int k = 0; k<ndiff_var; k++ )
+          fprintf(fout_eig_val_real,"%20.14e \t", eigenvalues_real_part_host(i,k) );
+        fprintf(fout_eig_val_real,"\n");
 
-
-      // eig_val_imag
-      for (int k = 0; k<ndiff_var; k++ )
-        fprintf(fout_eig_val_imag,"%20.14e \t", eigenvalues_imag_part_host(i,k));
-      fprintf(fout_eig_val_imag,"\n");
-
+        // eig_val_imag
+        for (int k = 0; k<ndiff_var; k++ )
+          fprintf(fout_eig_val_imag,"%20.14e \t", eigenvalues_imag_part_host(i,k));
+        fprintf(fout_eig_val_imag,"\n");
 
         // eigenvector rigth
         for (int k = 0; k<ndiff_var; k++ ) {
@@ -604,48 +684,19 @@ int main(int argc, char *argv[]) {
           }
           fprintf(fout_eig_vec_R,"\n");
         }
-
-
-
-        //Participation index
-        for (int k = 0; k<ndiff_var; k++ ) {
-          for (int j = 0; j<(nTotalReactions); j++ ) {
-            fprintf(fout_Pim,"%15.10e \t", PartIndex(i,k,j));
-           }
-          fprintf(fout_Pim,"\n");
-        }
-        //
-        // Slow importance index
-        for (int k = 0; k<ndiff_var; k++ ) {
-          for (int j = 0; j<(nTotalReactions); j++ ) {
-            fprintf(fout_Isi,"%15.10e \t", SlowImpoIndex(i,k,j));
-          }
-        fprintf(fout_Isi,"\n");
-        }
-
-        //
-        //Fast importance index
-        for (int k = 0; k<ndiff_var; k++ ) {
-          for (int j = 0; j<(nTotalReactions); j++ ) {
-            fprintf(fout_Ifn,"%15.10e \t", FastImpoIndex(i,k,j));
-          }
-          fprintf(fout_Ifn,"\n");
-        }
-
          //M
         fprintf(fout," %d \n", M_host(i));
 
-        //
-        for (int j = 0; j<(nTotalReactions); j++ ) {
-          fprintf(fout_RoP,"%15.10e \t", RoPdb_host(i,j));
-        }
+        for (int j = 0; j<(nTotalReactions/2); j++ )
+          fprintf(fout_RoP,"%15.10e \t", RoPdb_fwd_host(i,j));
+        for (int j = 0; j<(nTotalReactions/2); j++ )
+          fprintf(fout_RoP,"%15.10e \t", RoPdb_rev_host(i,j));
         fprintf(fout_RoP,"\n");
-
 
         //tau
         for (int k = 0; k<ndiff_var; k++ ) {
                 fprintf(fout_tau,"%20.14e \t", time_scales_host(i,k));
-          }
+        }
         fprintf(fout_tau,"\n");
 
         // f
@@ -665,13 +716,10 @@ int main(int argc, char *argv[]) {
 
       }
 
-      }
-
       // model class
-
       fclose(fout_RoP);
       fclose(fout_source);
-
+      fclose(fout_smatrix);
 
       fclose(fout_eig_vec_R);
       fclose(fout_eig_val_imag);
@@ -679,11 +727,7 @@ int main(int argc, char *argv[]) {
 
       // index class
       // file with whole data base
-      fclose(fout_Pim);
-      fclose(fout_Isi);
-      fclose(fout_Ifn);
       fclose(fout_cspP);
-
 
       // kernel class
       fclose(fout);
@@ -691,13 +735,9 @@ int main(int argc, char *argv[]) {
       fclose(fout_tau);
       fclose(fout_num_rank);
 
-
-
     }
-    exec_space_instance.fence();
-    const real_type  t_write_files = timer.seconds();
 
-    fprintf(fout_times, "%s: %20.14e \n ","\"Write files\"", t_write_files);
+    fprintf(fout_times, "%s: %20.14e \n ","\"dummy\"", 0);
     fprintf(fout_times, "} \n ");// end file
     fclose(fout_times);
 

@@ -3,8 +3,8 @@ CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
-Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS). 
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains 
+Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
 certain rights in this software.
 
 This file is part of CSPlib. CSPlib is open-source software: you can redistribute it
@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
   double Area(0.00053);              // m2
   double Pcat(0.025977239243415308); // m
   bool verbose(false);
-  // bool isoThermic(false);
+  // bool isothermal(false);
   bool compute_M_wo_exp(false);
 
   std::string chemFile(prefixPath + "chem.inp");
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
   opts.set_option<double>("atol", "absolute tolerance for csp analysis e.g., 1e-8 ", &csp_atolvar);
   opts.set_option<real_type>("Area", "Cross-sectional Area", &Area);
   opts.set_option<real_type>("Pcat", "Chemically active perimeter,", &Pcat);
-  opts.set_option<bool>("computeM_WoExpFactor", "if True, reaction is isotermic", &compute_M_wo_exp);
+  opts.set_option<bool>("computeM_WoExpFactor", "if True, reaction is number of exhausted model with exponential factor", &compute_M_wo_exp);
   opts.set_option<int>
   ("useAnalyticalJacobian",
    "Use a analytical jacobian; 0: sacado analytical jacobian, 1: numerical jacobian", &use_analytical_Jacobian);

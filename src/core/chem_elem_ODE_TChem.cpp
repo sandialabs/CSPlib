@@ -843,7 +843,8 @@ void ChemElemODETChem::getSmatrix(std::vector<std::vector<double> >& Smat)
 
 }
 
-void ChemElemODETChem::getRoPDevice(real_type_2d_view& RoP)
+void ChemElemODETChem::getRoPDevice(real_type_2d_view& RoP_fwd,
+                                    real_type_2d_view& RoP_rev )
 {
   Tines::ProfilingRegionScope region("CSPlib::getRoPDevice");
 
@@ -858,22 +859,8 @@ void ChemElemODETChem::getRoPDevice(real_type_2d_view& RoP)
   }
 
   CSPLIB_CHECK_ERROR(_RoPFor.span() == 0, " _RoPFor should be computed: run evalRoP()");
-
-  if ( RoP.span() == 0 ){
-    RoP = real_type_2d_view("RoPl", _nBatch, 2.0*_Nreac );
-  }
-
-  const int d1 = _nBatch;
-  const int d2 = _Nreac;
-  const auto RoPFor = _RoPFor;
-  const auto RoPRev = _RoPRev;
-  Kokkos::parallel_for(Kokkos::RangePolicy<exec_space>(0, d1*d2 ), KOKKOS_LAMBDA(const int &ij) {
-    const int i = ij/d2, j = ij%d2; /// m is the dimension of R
-    RoP(i,j) = RoPFor(i,j);
-    RoP(i,j+d2) = -RoPRev(i,j);
-  });
-
-
+  RoP_fwd = _RoPFor;
+  RoP_rev = _RoPRev;
 }
 
 
@@ -889,19 +876,7 @@ void ChemElemODETChem::getSmatrixDevice(real_type_3d_view& Smatrixdb)
    }
 
    CSPLIB_CHECK_ERROR(_Smat.span() == 0, " S matrix should be computed: run evalSmatrix()");
-
-   if ( Smatrixdb.span() == 0 ){
-     Smatrixdb = real_type_3d_view("S", _nBatch, _Nvars, 2*_Nreac);
-   }
-
-   auto S_A = Kokkos::subview(Smatrixdb, Kokkos::ALL(), Kokkos::ALL(),
-     Kokkos::pair<int,int>(0,_Nreac));
-   auto S_B = Kokkos::subview(Smatrixdb, Kokkos::ALL(), Kokkos::ALL(),
-     Kokkos::pair<int,int>(_Nreac,2*_Nreac));
-
-   Kokkos::deep_copy(S_A, _Smat);
-   Kokkos::deep_copy(S_B, _Smat);
-
+   Smatrixdb = _Smat;
 }
 
 void ChemElemODETChem::getSourceVectorDevice(real_type_2d_view& rhs)

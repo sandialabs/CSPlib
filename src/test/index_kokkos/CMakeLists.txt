@@ -8,6 +8,12 @@ set ( SRCS "index_kokkos.cpp" )
 add_executable( ${EXEC}  ${SRCS} )
 target_link_libraries( ${EXEC} ${CSPlib_LINK_LIBRARIES} )
 
+set ( EXEC "index_kokkos_v2.exe" )
+set ( SRCS "index_kokkos_v2.cpp" )
+
+add_executable( ${EXEC}  ${SRCS} )
+target_link_libraries( ${EXEC} ${CSPlib_LINK_LIBRARIES} )
+
 set ( EXEC "index_kernel_batch.exe" )
 set ( SRCS "index_kernel_batch.cpp" )
 
@@ -22,6 +28,7 @@ target_link_libraries( ${EXEC} ${CSPlib_LINK_LIBRARIES} )
 
 SET(copy_EXE_FILES
     index_kokkos.exe
+    index_kokkos_v2.exe
     index_kernel_batch.exe
     index_batch.exe
    )

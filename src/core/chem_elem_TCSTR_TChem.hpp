@@ -147,7 +147,7 @@ class ChemElemTCSTR_TChem : public Model
 
   void setCSTR(const std::string& input_condition_file_name,
                const double& mdotIn,  const double& Vol,
-               const double& Acat, const bool& isoThermic);
+               const double& Acat, const bool& isothermal);
 
 };
 

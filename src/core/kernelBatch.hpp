@@ -27,8 +27,6 @@ Sandia National Laboratories, Livermore, CA, USA
 #include "kernel_kokkos.hpp"
 #include "CSPlib_ConfigDefs.h"
 
-// #define CSPLIB_MESUARE_WALL_TIME
-
 class CSPKernelBatch
 {
 
@@ -89,11 +87,6 @@ class CSPKernelBatch
     int _eigenvalues_real_part_need_sync,  _eigenvalues_imag_part_need_sync;
     int _nBatch, _n_variables;
 
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-    Kokkos::Timer timer;
-    FILE* fs;
-#endif
-
     enum {
        NeedSyncToDevice = 1,
        NeedSyncToHost = -1,
@@ -116,13 +109,7 @@ class CSPKernelBatch
                   _nBatch(Jacobian.extent(0)),
                   _n_variables(Jacobian.extent(1))
           {
-            printf("kernel: _nBatch %d, _n_variables %d\n", _nBatch, _n_variables);
-#if defined(CSPLIB_MESUARE_WALL_TIME)
-            fs = fopen("CSPLIB_KernelKokkos.out", "w");
-            fprintf(fs, "{\n");
-            fprintf(fs, "%s: %d, \n","\"Number of state vectors\"", _nBatch);
-            fprintf(fs, "\"Kernel Class\": \n {\n");
-#endif
+            printf("CSPlib Kernel Class: _nBatch %d, _n_variables %d\n", _nBatch, _n_variables);
           }
 
    ~CSPKernelBatch();

@@ -3,8 +3,8 @@ CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
-Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS). 
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains 
+Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
 certain rights in this software.
 
 This file is part of CSPlib. CSPlib is open-source software: you can redistribute it
@@ -24,7 +24,7 @@ Sandia National Laboratories, Livermore, CA, USA
 #define TOOLS_TINES
 
 #include "Tines.hpp"
-
+#include "TChem.hpp"
 template<typename SpT>
 struct ComputeReducedJacobian{
 
@@ -117,7 +117,6 @@ public:
 
     int wlen;
     Tines::SolveLinearSystem::workspace(fv, fu, wlen);
-
     auto work_linear_solver = RealType1DViewType(wptr, wlen);
     wptr+=wlen;
 
@@ -192,6 +191,96 @@ public:
   }
 };
 
+
+  template<typename SpT>
+ struct verfiySmatRop{
+
+   public:
+   using real_type = double;
+   using ordinal_type = int;
+   using device_type      = typename Tines::UseThisDevice<SpT>::type;
+   using real_type_1d_view = Tines::value_type_1d_view<real_type,device_type>;
+   using real_type_2d_view = Tines::value_type_2d_view<real_type,device_type>;
+   using real_type_3d_view = Tines::value_type_3d_view<real_type,device_type>;
+   using policy_type = typename TChem::UseThisTeamPolicy<SpT>::type;
+
+   inline
+   static void runBatch(const real_type_3d_view &Smatrix,
+                        const real_type_2d_view &rop_fwd,
+                        const real_type_2d_view &rop_rev,
+                        const real_type_2d_view &rhs,
+                        const real_type_2d_view &rhs_out,
+                        const real_type_2d_view &diff)
+  {
+    const ordinal_type m = Smatrix.extent(1);
+    const int N   = Smatrix.extent(0);
+    policy_type policy(N, Kokkos::AUTO());
+    const int level = 1;
+    const int per_team_extent = 2 * m;
+    const int per_team_scratch =
+      Tines::ScratchViewType<real_type_1d_view>::shmem_size(per_team_extent);
+    policy.set_scratch_size(level, Kokkos::PerTeam(per_team_scratch));
+
+    Kokkos::parallel_for(
+      "CSPlib::computeSmatRop",
+      policy,
+      KOKKOS_LAMBDA(const typename policy_type::member_type& member) {
+        const ordinal_type i = member.league_rank();
+
+        Tines::ScratchViewType<real_type_1d_view> work(member.team_scratch(level),
+                                        per_team_extent);
+        auto wptr = work.data();
+        const real_type_1d_view rhs_fwd(wptr, m);
+        wptr += m;
+        const real_type_1d_view rhs_rev(wptr, m);
+        wptr += m;
+
+        const auto Smatrix_at_i =
+          Kokkos::subview(Smatrix, i, Kokkos::ALL(), Kokkos::ALL());
+        const auto rop_fwd_at_i = Kokkos::subview(rop_fwd, i, Kokkos::ALL());
+        const auto rop_rev_at_i = Kokkos::subview(rop_rev, i, Kokkos::ALL());
+        const auto diff_at_i = Kokkos::subview(diff, i, Kokkos::ALL());
+        const auto rhs_at_i = Kokkos::subview(rhs, i, Kokkos::ALL());
+        const auto rhs_out_at_i = Kokkos::subview(rhs_out, i, Kokkos::ALL());
+
+        invoke(member, Smatrix_at_i, rop_fwd_at_i, rop_rev_at_i,
+                       rhs_at_i, rhs_fwd, rhs_rev, rhs_out_at_i,  diff_at_i);
+
+      });
+  }
+
+  template<typename MemberType>
+  KOKKOS_INLINE_FUNCTION static void
+  invoke(const MemberType& member,
+         const real_type_2d_view &Smatrix,
+         const real_type_1d_view &rop_fwd,
+         const real_type_1d_view &rop_rev,
+         const real_type_1d_view &rhs,
+         const real_type_1d_view &rhs_fwd,
+         const real_type_1d_view &rhs_rev,
+         const real_type_1d_view &rhs_out,
+         const real_type_1d_view& diff)
+  {
+    const real_type one(1), zero(0);
+    const real_type small(1e-23);
+    Tines::Gemv<Tines::Trans::NoTranspose>::invoke(member, one, Smatrix, rop_fwd,
+                                                   zero, rhs_fwd);
+    Tines::Gemv<Tines::Trans::NoTranspose>::invoke(member, one, Smatrix, rop_rev,
+                                                   zero, rhs_rev);
+    member.team_barrier();
+    Kokkos::parallel_for(
+      Tines::RangeFactory<real_type>::TeamVectorRange(member, diff.extent(0)), [&](const ordinal_type& j) {
+        const real_type rhs_s_rop = rhs_fwd(j) - rhs_rev(j);
+        diff(j) = (rhs(j) - rhs_s_rop  )/(rhs(j)+small);
+        rhs_out(j) =rhs_s_rop;
+
+      });
+    member.team_barrier();
+  }
+
+
+
+ };
 namespace CSP {
 namespace Test {
 static inline bool
