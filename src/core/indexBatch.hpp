@@ -27,6 +27,8 @@ Sandia National Laboratories, Livermore, CA, USA
 #include "index_kokkos.hpp"
 #include "CSPlib_ConfigDefs.h"
 
+// #define CSP_ENABLE_SCHEDULE_KOKKOS_STATIC
+
 class CSPIndexBatch
 {
 
@@ -38,7 +40,11 @@ class CSPIndexBatch
    using host_device_type = typename Tines::UseThisDevice<host_exec_space>::type;
    using device_type      = typename Tines::UseThisDevice<exec_space>::type;
 
+#if defined(CSP_ENABLE_SCHEDULE_KOKKOS_STATIC)
+   using policy_type = Kokkos::TeamPolicy<exec_space, Kokkos::Schedule<Kokkos::Static>>;
+#else
    using policy_type = Kokkos::TeamPolicy<exec_space>;
+#endif
 
    using index_csplib_host = CSP::IndexComputation<host_device_type>;
    using index_csplib_device = CSP::IndexComputation<device_type>;
@@ -153,6 +159,11 @@ void evalImportanceIndexFast(const ordinal_type& team_size=ordinal_type(-1),
                              const ordinal_type& vector_size=ordinal_type(-1));
 void evalImportanceIndexFastFwdAndRev(const ordinal_type& team_size=ordinal_type(-1),
                              const ordinal_type& vector_size=ordinal_type(-1));
+//
+void evalUnnormalizedImportanceIndexSlowFwdAndRev(real_type_3d_view& UnnormSlowImpoIndex,
+     const ordinal_type& team_size=ordinal_type(-1), const ordinal_type& vector_size=ordinal_type(-1));
+void evalUnnormalizedImportanceIndexFastFwdAndRev(real_type_3d_view& UnnormFastImpoIndex,
+     const ordinal_type& team_size=ordinal_type(-1), const ordinal_type& vector_size=ordinal_type(-1));
 void freeSlowImportanceIndexView();
 void freeFastImportantIndexView();
 void freeParticipationIndexView();

@@ -43,7 +43,7 @@ void CSPIndexBatch::evalBeta(const ordinal_type& team_size,
 {
   Tines::ProfilingRegionScope region("CSPlib::evalBeta");
   createBetaView();
-  using policy_type = Kokkos::TeamPolicy<exec_space>;
+
   policy_type policy(_nBatch, Kokkos::AUTO()); // fine
   if ( team_size > 0 && vector_size > 0) {
    policy = policy_type(exec_space(), _nBatch, team_size, vector_size);
@@ -79,7 +79,6 @@ void CSPIndexBatch::evalAlpha(const ordinal_type& team_size,
   createAlphaView();
   Kokkos::fence();
 
-  using policy_type = Kokkos::TeamPolicy<exec_space>;
   policy_type policy(_nBatch, Kokkos::AUTO()); // fine
   if ( team_size > 0 && vector_size > 0) {
    policy = policy_type(exec_space(), _nBatch, team_size, vector_size);
@@ -114,8 +113,6 @@ void CSPIndexBatch::evalGamma(const ordinal_type& team_size,
       evalBeta(team_size,vector_size);
   createGammaView();
 
-
-  using policy_type = Kokkos::TeamPolicy<exec_space>;
   policy_type policy(_nBatch, Kokkos::AUTO()); // fine
   if ( team_size > 0 && vector_size > 0) {
    policy = policy_type(exec_space(), _nBatch, team_size, vector_size);
@@ -469,4 +466,60 @@ CSPIndexBatch::real_type_3d_view_host CSPIndexBatch::getImportanceIndexFast(){
   }
 
   return _FastImportanceIndex._host;
+}
+
+void CSPIndexBatch::evalUnnormalizedImportanceIndexSlowFwdAndRev(real_type_3d_view& UnnormSlowImpoIndex,
+     const ordinal_type& team_size, const ordinal_type& vector_size)
+{
+     Tines::ProfilingRegionScope region("CSPlib::evalUnnormalizedImportanceIndexSlow");
+     policy_type policy(exec_space(), _nBatch, Kokkos::AUTO());
+     if ( team_size > 0 && vector_size > 0) {
+       policy = policy_type(exec_space(), _nBatch, team_size, vector_size);
+     }
+
+     if (_Alpha.span() == 0)
+         evalAlpha(team_size, vector_size);
+     if (UnnormSlowImpoIndex.span() == 0){
+         UnnormSlowImpoIndex = real_type_3d_view("UnnormSlowImpoIndex", _nBatch, _n_variables, _n_total_processes);
+     }
+
+     // negative because _RoP_rev is not negative
+     const real_type factor(-1);
+     index_csplib_device::evalUnnormalizedCSPIndexBatch("CSPlib::evalUnnormalizedSlowImportanceIndex::runDeviceBatch",
+                                            policy,
+                                            _Alpha, // input
+                                            _RoP_fwd, // input
+                                            _RoP_rev,
+                                            factor,
+                                            UnnormSlowImpoIndex);  // work
+
+}
+
+void CSPIndexBatch::evalUnnormalizedImportanceIndexFastFwdAndRev(real_type_3d_view& UnnormFastImpoIndex,
+     const ordinal_type& team_size, const ordinal_type& vector_size)
+{
+     Tines::ProfilingRegionScope region("CSPlib::evalUnnormalizedImportanceIndexFast");
+     policy_type policy(exec_space(), _nBatch, Kokkos::AUTO());
+     if ( team_size > 0 && vector_size > 0) {
+       policy = policy_type(exec_space(), _nBatch, team_size, vector_size);
+     }
+
+
+     if (_Gamma.span() == 0)
+         evalGamma(team_size, vector_size);
+
+     if (UnnormFastImpoIndex.span() == 0){
+         UnnormFastImpoIndex = real_type_3d_view("UnnormFastImpoIndex", _nBatch, _n_variables, _n_total_processes);
+     }
+
+     // negative because _RoP_rev is not negative
+     const real_type factor(-1);
+     index_csplib_device::evalUnnormalizedCSPIndexBatch("CSPlib::evalUnnormalizedSlowImportanceIndex::runDeviceBatch",
+                                            policy,
+                                            _Gamma, // input
+                                            _RoP_fwd, // input
+                                            _RoP_rev,
+                                            factor,
+                                            UnnormFastImpoIndex);
+
 }

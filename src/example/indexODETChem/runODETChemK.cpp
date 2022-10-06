@@ -93,6 +93,9 @@ int main(int argc, char *argv[]) {
   int use_analytical_Jacobian(0);
   bool use_yaml_settings_file(false);
   bool compute_csp_indices(true);
+  // it uses for numerical experiments
+  bool useCloneSamples(false);
+  bool use_yaml(false);
 
   std::string variable1("Temperature");
   std::string variable2("CH4");
@@ -102,6 +105,7 @@ int main(int argc, char *argv[]) {
   opts.set_option<std::string>("prefix", "prefix to save output files e.g., pos_ ", &firstname);
   opts.set_option<double>("rtol", "relative tolerance for csp analysis e.g., 1e-2 ", &csp_rtolvar);
   opts.set_option<double>("atol", "absolute tolerance for csp analysis e.g., 1e-8 ", &csp_atolvar);
+  opts.set_option<bool>("use-yaml", "If true, use yaml to parse input file", &use_yaml);
   opts.set_option<std::string>
   ("chemfile", "Chem file name e.g., chem.inp",
   &chemFile);
@@ -116,6 +120,10 @@ int main(int argc, char *argv[]) {
   ("useTChemSolution", "Use a solution produced by TChem e.g., true", &useTChemSolution);
   opts.set_option<bool>(
       "verbose", "If true, printout state vector, jac ...", &verbose);
+  //
+  opts.set_option<bool>(
+      "use-clone-samples", "If true, one state vector will be clone.", &useCloneSamples);
+
   opts.set_option<bool>(
       "write-files", "If true, write output files", &write_files);
   opts.set_option<std::string>
@@ -219,12 +227,13 @@ int main(int argc, char *argv[]) {
     fprintf(fout_times, " \"Model Class\": \n {\n");
 
     timer.reset();
-    ChemElemODETChem  model(chemFile, thermFile);
+    ChemElemODETChem  model(chemFile, thermFile, use_yaml);
     exec_space_instance.fence();
     const real_type t_int_model_class = timer.seconds();
     fprintf(fout_times, "%s: %20.14e, \n","\"Int model class\"", t_int_model_class);
 
     real_type t_read_state(0);
+
 
     if (useTChemSolution) {
       // read a data base from a TChem++ Ingition solution
@@ -236,12 +245,41 @@ int main(int argc, char *argv[]) {
       fprintf(fout_times, "%s: %20.14e, \n","\"Read state vector\"", t_read_state);
 
     } else {
-      // read a data base that was not produced by TChem
-      std::vector<std::vector <double> > state_db_read;
-      // Density, pressure, temperature and species mass fraction
-      const int numofStateVariables = 3 + model.NumOfSpecies();
-      readDataBase(inputFile, state_db_read, numofStateVariables );
-      model.setStateVectorDB(state_db_read);
+      // read one state vector a make many clone samples; this is use for numerical experimentes
+      // this option is only enable if useTChemSolution is false
+      if (useCloneSamples) {
+
+        printf("-------------------------------------------------------\n");
+        printf("--------------------Warning----------------------------\n");
+        printf("Using cloned samples ... only for numerical experiments\n");
+        // in this scenario increment is equal to increment number of samples
+        auto nBatch = increment;
+        printf("Number of samples %d : \n", nBatch);
+        const ordinal_type nSpec = model.NumOfSpecies();
+        const ordinal_type stateVecDim = TChem::Impl::getStateVectorSize(nSpec);
+        real_type_2d_view state("StateVector", nBatch, stateVecDim);
+        auto state_host = Kokkos::create_mirror_view(state);
+        auto state_host_at_0 = Kokkos::subview(state_host, 0, Kokkos::ALL());
+        TChem::Test::readStateVector(inputFile, nSpec, state_host_at_0);
+        printf("reading state vector from : %s \n", inputFile.c_str());
+
+        TChem::Test::cloneView(state_host);
+        Kokkos::deep_copy(state, state_host);
+        // set state vector in model class
+        model.setStateVectorDB(state);
+
+      } else {
+        // read a data base that was not produced by TChem
+        std::vector<std::vector <double> > state_db_read;
+        // Density, pressure, temperature and species mass fraction
+        const ordinal_type nSpec = model.NumOfSpecies();
+        const ordinal_type numofStateVariables = TChem::Impl::getStateVectorSize(nSpec);
+        readDataBase(inputFile, state_db_read, numofStateVariables );
+        model.setStateVectorDB(state_db_read);
+      }
+
+
+
     }
 
     printf("Working in model ...\n");
@@ -387,23 +425,55 @@ int main(int argc, char *argv[]) {
     exec_space_instance.fence();
     const real_type t_init_kernel_class = timer.seconds();
     fprintf(fout_times, "%s: %20.14e, \n","\"Init kernel class\"", t_init_kernel_class);
+    //
+    // SET_TEAM_VECTOR_SIZE("evalEigenSolution")
+    // // compute eigensolution and sort eigensolution w.r.t magnitude of eigenvalues
+    // timer.reset();
+    // kernelBatch.evalEigenSolution(team_size, vector_size);
+    // exec_space_instance.fence();
+    // const real_type t_comp_eigen_solution = timer.seconds();
+    // fprintf(fout_times, "%s: %20.14e, \n","\"Compute eigensolution\"", t_comp_eigen_solution);
 
+    Tines::control_type control;
+      /// tpl use
+    control["Bool:UseTPL"].bool_value = false;
+    control["Bool:SolveEigenvaluesNonSymmetricProblem:Sort"].bool_value = true;
+    SET_TEAM_VECTOR_SIZE("Hessenberg")
+    /// eigen solve
+    if ( team_size > 0 && vector_size > 0) {
+      control["IntPair:Hessenberg:TeamSize"].int_pair_value = std::pair<int,int>(team_size,vector_size);
+    } // else use tines default values
+    SET_TEAM_VECTOR_SIZE("RightEigenvectorSchur")
+    if ( team_size > 0 && vector_size > 0) {
+          control["IntPair:RightEigenvectorSchur:TeamSize"].int_pair_value = std::pair<int,int>(team_size,vector_size);
+    }
+    SET_TEAM_VECTOR_SIZE("GemmEigen")
+    if ( team_size > 0 && vector_size > 0) {
+      control["IntPair:Gemm:TeamSize"].int_pair_value = std::pair<int,int>(team_size,vector_size);
+    }
+    SET_TEAM_VECTOR_SIZE("SortRightEigenPairs")
+    if ( team_size > 0 && vector_size > 0) {
+      control["IntPair:SortRightEigenPairs:TeamSize"].int_pair_value = std::pair<int,int>(team_size,vector_size);
+    }
 
-    SET_TEAM_VECTOR_SIZE("evalEigenSolution")
-    // compute eigensolution and sort eigensolution w.r.t magnitude of eigenvalues
     timer.reset();
-    kernelBatch.evalEigenSolution(team_size, vector_size);
+    kernelBatch.evalEigenSolution(control);
     exec_space_instance.fence();
     const real_type t_comp_eigen_solution = timer.seconds();
     fprintf(fout_times, "%s: %20.14e, \n","\"Compute eigensolution\"", t_comp_eigen_solution);
 
+
+
+
+
+
     // sort eigensolution w.r.t magnitude of eigenvalues
-    SET_TEAM_VECTOR_SIZE("sortEigenSolution")
-    timer.reset();
-    kernelBatch.sortEigenSolution(team_size, vector_size);
-    exec_space_instance.fence();
-    const real_type t_sort_eigen_values_vectors = timer.seconds();
-    fprintf(fout_times, "%s: %20.14e, \n","\"Sort eigensolution\"", t_sort_eigen_values_vectors);
+    // SET_TEAM_VECTOR_SIZE("sortEigenSolution")
+    // timer.reset();
+    // kernelBatch.sortEigenSolution(team_size, vector_size);
+    // exec_space_instance.fence();
+    // const real_type t_sort_eigen_values_vectors = timer.seconds();
+    // fprintf(fout_times, "%s: %20.14e, \n","\"Sort eigensolution\"", t_sort_eigen_values_vectors);
 
     SET_TEAM_VECTOR_SIZE("evalCSPbasisVectors")
     // Setting CSP vectors:
@@ -618,17 +688,19 @@ int main(int argc, char *argv[]) {
       FILE *fout_tau = fopen ( (tau_file_name).c_str(), "w" );
       FILE *fout_f = fopen ( (f_file_name).c_str(), "w" );
 
-      std::string num_rank_file_name = firstname + "_jac_numerical_rank.dat";
-      FILE *fout_num_rank = fopen ( (num_rank_file_name).c_str(), "w" );
+      // std::string num_rank_file_name = firstname + "_jac_numerical_rank.dat";
+      // FILE *fout_num_rank = fopen ( (num_rank_file_name).c_str(), "w" );
       // model class
 
       std::string RoP_name = firstname + "_RoP.dat";
       std::string source_name = firstname + "_source.dat";
       std::string Smatrix_name = firstname + "_Smatrix.dat";
+      std::string state_name = firstname + "_state.dat";
 
-      FILE * fout_smatrix = fopen ( (Smatrix_name).c_str(), "w" );
+      FILE *fout_smatrix = fopen ( (Smatrix_name).c_str(), "w" );
       FILE *fout_RoP = fopen ( (RoP_name).c_str(), "w" );
       FILE *fout_source = fopen ( (source_name).c_str(), "w" );
+      // FILE *fout_state_name = fopen ( (state_name).c_str(), "w" );
 
       std::string eig_val_real_file_name = firstname + "_eig_val_real.dat";
       std::string eig_val_imag_file_name = firstname + "_eig_val_imag.dat";
@@ -656,7 +728,13 @@ int main(int argc, char *argv[]) {
       Kokkos::deep_copy(RoPdb_rev_host, RoPdb_rev);
 
       auto Smatrix_host = Kokkos::create_mirror_view(Smatrixdb);
-      Kokkos::deep_copy(Smatrix_host,Smatrixdb);
+      Kokkos::deep_copy(Smatrix_host, Smatrixdb);
+
+      auto rhs_host = Kokkos::create_mirror_view(rhs);
+      Kokkos::deep_copy(rhs_host, rhs);
+
+      // auto state_dev_host = Kokkos::create_mirror_view(state_dev);
+      // Kokkos::deep_copy(state_dev_host, state_dev);
 
       for (size_t i = 0; i < nSample; i++) {
         // s matrix
@@ -666,6 +744,14 @@ int main(int argc, char *argv[]) {
           }
           fprintf(fout_smatrix,"\n");
         }
+        // source
+        for (int k = 0; k<ndiff_var; k++ )
+          fprintf(fout_source,"%20.14e \t", rhs_host(i,k) );
+        fprintf(fout_source,"\n");
+        //state
+        // for (int k = 0; k<ndiff_var; k++ )
+        //   fprintf(fout_state_name,"%20.14e \t", state_dev_host(i,k) );
+        // fprintf(fout_state_name,"\n");
 
         // eig_val_real
         for (int k = 0; k<ndiff_var; k++ )
@@ -720,6 +806,7 @@ int main(int argc, char *argv[]) {
       fclose(fout_RoP);
       fclose(fout_source);
       fclose(fout_smatrix);
+      // fclose(fout_state_name);
 
       fclose(fout_eig_vec_R);
       fclose(fout_eig_val_imag);
@@ -733,7 +820,7 @@ int main(int argc, char *argv[]) {
       fclose(fout);
       fclose(fout_f);
       fclose(fout_tau);
-      fclose(fout_num_rank);
+      // fclose(fout_num_rank);
 
     }
 

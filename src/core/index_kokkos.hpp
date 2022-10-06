@@ -169,8 +169,6 @@ struct IndexComputation {
 
   }
 
-
-
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION static void
   evalAlpha(const MemberType &member,
@@ -360,6 +358,73 @@ struct IndexComputation {
        const real_type_2d_view_type CSPIndex_at_i = Kokkos::subview(CSPIndex, i, Kokkos::ALL(), Kokkos::ALL());
 
        evalCSPIndex(member, Beta_at_i, RoP_at_i, CSPIndex_at_i, deno_at_i);
+     });
+  }
+
+
+  /*compute an unnormaluzed CSP index*/
+  template <typename MemberType>
+  KOKKOS_INLINE_FUNCTION static void
+  evalUnnormalizedCSPIndex(const MemberType &member,
+               const real_type_2d_view_type& Beta, // input
+               const real_type_1d_view_type& RoP_fwd, // input
+               const real_type_1d_view_type& RoP_rev, // input
+               const real_type& factor,
+               const real_type_2d_view_type& CSPIndex)
+  {
+    /*
+    participation index for all modes
+
+    P(m,k)           =  (b^m . S_k) . r^k                          m=1,N
+    */
+
+    const ordinal_type n_variables(Beta.extent(0));
+    const ordinal_type n_processes(Beta.extent(1));
+    Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(member, n_variables), [&](const int &i) {
+        Kokkos::parallel_for(
+          Kokkos::ThreadVectorRange(member, n_processes), [=](const int &j) {
+            CSPIndex(i,j) = Beta(i,j) * RoP_fwd(j);
+      });
+    });
+
+    Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(member, n_variables), [&](const int &i) {
+        Kokkos::parallel_for(
+          Kokkos::ThreadVectorRange(member, n_processes), [=](const int &j) {
+            CSPIndex(i,j + n_processes) = Beta(i,j) * factor * RoP_rev(j);
+        });
+    });
+
+    member.team_barrier();
+
+
+  }
+
+  template<typename PolicyType>
+  static void
+  evalUnnormalizedCSPIndexBatch(const std::string& profile_name,
+                const PolicyType& policy,
+                const real_type_3d_view_type& Beta, // input
+                const real_type_2d_view_type& RoP_fwd, // input
+                const real_type_2d_view_type& RoP_rev, // input
+                const real_type& factor,
+                const real_type_3d_view_type& CSPIndex) //output
+  {
+    Tines::ProfilingRegionScope region(profile_name);
+    using policy_type = PolicyType;
+
+    Kokkos::parallel_for(
+     profile_name,
+     policy,
+     KOKKOS_LAMBDA(const typename policy_type::member_type& member) {
+       const ordinal_type i = member.league_rank();
+       const real_type_1d_view_type RoP_fwd_at_i = Kokkos::subview(RoP_fwd, i, Kokkos::ALL());
+       const real_type_1d_view_type RoP_rev_at_i = Kokkos::subview(RoP_rev, i, Kokkos::ALL());
+       const real_type_2d_view_type Beta_at_i = Kokkos::subview(Beta, i, Kokkos::ALL(), Kokkos::ALL());
+       const real_type_2d_view_type CSPIndex_at_i = Kokkos::subview(CSPIndex, i, Kokkos::ALL(), Kokkos::ALL());
+
+       evalUnnormalizedCSPIndex(member, Beta_at_i, RoP_fwd_at_i, RoP_rev_at_i, factor, CSPIndex_at_i);
      });
   }
 

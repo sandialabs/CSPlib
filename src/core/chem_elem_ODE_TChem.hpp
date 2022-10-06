@@ -94,7 +94,8 @@ class ChemElemODETChem : public Model
 
   //constructor:
   ChemElemODETChem( const std::string &mech_gas_file     ,
-                    const std::string &thermo_gas_file   );
+                    const std::string &thermo_gas_file,
+                    const bool  use_yaml=false   );
 
   ~ChemElemODETChem();
 
@@ -170,6 +171,8 @@ class ChemElemODETChem : public Model
   void getStateVectorDevice(real_type_2d_view& state_vector);
 
   void getJacMatrixDevice(real_type_3d_view& jac);
+  // set state vector in device and host. In adition set _nBatch
+  void setStateVectorDB(real_type_2d_view& state);
 
 
 };

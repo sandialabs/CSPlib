@@ -31,11 +31,13 @@ IF (CSPlib_ENABLE_TCHEMPP)
 LIST(APPEND CSPlib_SOURCES
             chem_elem_ODE_TChem.cpp
             chem_elem_TCSTR_TChem.cpp
+            chem_elem_TCSTRI_TChem.cpp
             chem_elem_DAE_PFR_TChem.cpp)
 
 LIST(APPEND CSPlib_HEADERS
             chem_elem_ODE_TChem.hpp
             chem_elem_TCSTR_TChem.hpp
+            chem_elem_TCSTRI_TChem.hpp
             chem_elem_DAE_PFR_TChem.hpp)
 
 ENDIF()

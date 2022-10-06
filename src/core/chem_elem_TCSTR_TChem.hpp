@@ -61,7 +61,7 @@ class ChemElemTCSTR_TChem : public Model
   using host_device_type = typename Tines::UseThisDevice<TChem::host_exec_space>::type;
   using device_type      = typename Tines::UseThisDevice<TChem::exec_space>::type;
 
-  TChem::KineticModelData kmdSurf;
+  TChem::KineticModelData kmd;
   // device TChem object
   KineticSurfModelConstData<device_type> kmcdSurf;
   KineticModelConstData<device_type> kmcd;
@@ -90,9 +90,8 @@ class ChemElemTCSTR_TChem : public Model
                          const std::string &mech_surf_file    ,
                          const std::string &thermo_gas_file   ,
                          const std::string &thermo_surf_file  ,
-                         const int& Nalgebraic_constraints=0 );
-
-
+                         const int& Nalgebraic_constraints=0,
+                         const bool  use_yaml=false );
 
   //
   void readDataBaseFromFile(const std::string &filename,

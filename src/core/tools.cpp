@@ -3,8 +3,8 @@ CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
-Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS). 
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains 
+Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
 certain rights in this software.
 
 This file is part of CSPlib. CSPlib is open-source software: you can redistribute it
@@ -24,6 +24,26 @@ Sandia National Laboratories, Livermore, CA, USA
 //FR
 #include "tools.hpp"
 #include "Tines.hpp"
+
+
+// parse a string
+void CSP::parseString(std::string &my_string, // in
+                 std::string &delimiter, // in
+                 std::vector<int>& my_values// out
+               ){
+//my_string => "1,2,3"
+// delimiter=> ,
+// my_values => 1 2 3
+size_t pos = 0;
+std::string token;
+while ((pos = my_string.find(delimiter)) != std::string::npos) {
+  token = my_string.substr(0, pos);
+  my_values.push_back(std::stoi(token));
+  my_string.erase(0, pos + delimiter.length());
+}
+my_values.push_back(std::stoi(my_string));
+
+}
 
 // matrix vector multiplication A*b = c using std vectors
 void CSP::MatrixVectorMul(std::vector<std::vector<double> >&  A,
@@ -79,7 +99,7 @@ void CSP::convert_Real_to_Complex_Vector(std::vector<bool> &real_comlex_eigval_f
   Solution to a real system of linear equations,
     matA * mat_X = mat_B,
   where mat_X is the solution matrix. 1d interface.
-   
+
   This function overwrite matA_1d and matX_1d.
 */
 int CSP::LinearSystemSolve(
@@ -116,7 +136,7 @@ int CSP::LinearSystemSolve(
 				       (double*)&work[0], wlen,
 				       matrix_rank);
     }
-      gettimeofday( &end1, NULL );    
+      gettimeofday( &end1, NULL );
   }
   double wall_time = 1.0 * ( end1.tv_sec - begin1.tv_sec ) +
                  1.0e-6 * ( end1.tv_usec - begin1.tv_usec );

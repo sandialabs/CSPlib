@@ -27,6 +27,8 @@ Sandia National Laboratories, Livermore, CA, USA
 #include "kernel_kokkos.hpp"
 #include "CSPlib_ConfigDefs.h"
 
+// #define CSP_ENABLE_SCHEDULE_KOKKOS_STATIC
+
 class CSPKernelBatch
 {
 
@@ -41,7 +43,11 @@ class CSPKernelBatch
    using kernel_csplib_host = CSP::KernelComputation<host_device_type>;
    using kernel_csplib_device = CSP::KernelComputation<device_type>;
 
+#if defined(CSP_ENABLE_SCHEDULE_KOKKOS_STATIC)
+   using policy_type = Kokkos::TeamPolicy<exec_space, Kokkos::Schedule<Kokkos::Static>>;
+#else
    using policy_type = Kokkos::TeamPolicy<exec_space>;
+#endif
 
    using real_type_1d_view = Tines::value_type_1d_view<real_type,device_type>;
    using real_type_2d_view = Tines::value_type_2d_view<real_type,device_type>;
@@ -118,6 +124,8 @@ class CSPKernelBatch
                             const ordinal_type& vector_size=ordinal_type(-1));
    void createB_View();
    void createCSP_PointersView();
+
+   void evalEigenSolution(Tines::control_type& control);
    void evalCSP_Pointers(const ordinal_type& team_size=ordinal_type(-1),
                          const ordinal_type& vector_size=ordinal_type(-1));
    void createTimeScalesView();

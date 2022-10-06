@@ -28,7 +28,7 @@ Sandia National Laboratories, Livermore, CA, USA
 //==========================================================================================
 ChemElemODETChem::ChemElemODETChem(
                 const std::string &mech_gas_file     ,
-                const std::string &thermo_gas_file    )
+                const std::string &thermo_gas_file , const bool  use_yaml )
 
 {
     _nBatch = 1;
@@ -36,7 +36,11 @@ ChemElemODETChem::ChemElemODETChem(
     TChem::     exec_space::print_configuration(std::cout, detail);
     TChem::host_exec_space::print_configuration(std::cout, detail);
 
-    kmd = TChem::KineticModelData(mech_gas_file,thermo_gas_file);
+    if (use_yaml) {
+      kmd = TChem::KineticModelData(mech_gas_file);
+    } else {
+      kmd = TChem::KineticModelData(mech_gas_file, thermo_gas_file);
+    }
 
     kmcd = TChem::createGasKineticModelConstData<device_type>(kmd); // data struc with gas phase info
     // make also a copy on host
@@ -181,6 +185,14 @@ void ChemElemODETChem::readIgnitionZeroDDataBaseFromFile(const std::string& file
     }
   }
 
+}
+
+void ChemElemODETChem::setStateVectorDB(real_type_2d_view& state)
+{
+  _state = state;
+  _state_host = Kokkos::create_mirror_view(_state);
+  Kokkos::deep_copy(_state_host,_state);
+  _nBatch = _state.extent(0);
 }
 
 void ChemElemODETChem::setStateVectorDB(std::vector<std::vector <double> >& state_db){
@@ -600,8 +612,54 @@ void ChemElemODETChem::evalJacMatrixDevice(const ordinal_type& useJacAnl,
    _jac_need_sync = NeedSyncToHost;
    // free space
    // workspace = real_type_2d_view();
+ } else if (useJacAnl ==1){
+   printf(" Using Numerical Jacobian\n");
+   _jac = real_type_3d_view("numerical jacobian",_nBatch, _Nvars, _Nvars);
+   real_type_2d_view fac("fac", _nBatch, _Nvars); // this variables needs to be Ntotal length
+   real_type_2d_view workspace; //assume that the workspace is given from scratch space
 
-  }
+   TChem::IgnitionZeroDNumJacobian
+        ::runDeviceBatch( _state,
+                          _jac,
+                          fac,
+                          workspace,
+                          kmcd);
+
+  _jac_need_sync = NeedSyncToHost;
+} else if (useJacAnl ==2){
+
+   printf(" Using Sacado Analytical Jacobian\n");
+
+   _jac = real_type_3d_view("SacadoAnalyticalJacIgnition",_nBatch, _Nvars, _Nvars);
+   //
+   // const auto exec_space_instance = TChem::exec_space();
+   const ordinal_type level = 1;
+   const ordinal_type per_team_extent =
+   TChem::IgnitionZeroD_SacadoJacobian
+   ::getWorkSpaceSize(kmcd); ///
+   const ordinal_type per_team_scratch = Scratch<real_type_1d_view>::shmem_size(per_team_extent);
+   real_type_2d_view workspace;
+
+   if (use_shared_workspace) {
+     policy.set_scratch_size(level, Kokkos::PerTeam(per_team_scratch));
+   } else {
+     workspace = real_type_2d_view("workspace", policy.league_size(), per_team_scratch);
+   }
+
+   TChem::IgnitionZeroD_SacadoJacobian
+        ::runDeviceBatch(policy,
+                         _state, //gas
+                         _jac,
+                         workspace,
+                         kmcd);
+   //
+   _jac_need_sync = NeedSyncToHost;
+
+} else {
+  printf("Error Jacobian type does not exit %d \n", useJacAnl);
+  printf("use: 0 -> Analytical 1-> Numerical 2-> Sacado %d \n", useJacAnl);
+  exit(1);
+}
 
 }
 

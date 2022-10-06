@@ -58,12 +58,14 @@ int main(int argc, char *argv[]) {
   std::string inputFile(prefixPath + "CSTRSolution.dat");
   std::string initialConditionFile("sample.dat");
   int use_analytical_Jacobian(1);
+  bool use_yaml(false);
 
   CSP::CommandLineParser opts("This example carries out a CSP analysis with the ChemElemTCSTR_TChem class using a transient continuous stirred tank reactor ");
   // opts.set_option<std::string>("inputsPath", "path to inputs data(chem.inp, therm.dat ...) e.g.,data/", &prefixPath);
   opts.set_option<std::string>("prefix", "prefix to save output files e.g., pos_ ", &firstname);
   opts.set_option<double>("rtol", "relative tolerance for csp analysis e.g., 1e-2 ", &csp_rtolvar);
   opts.set_option<double>("atol", "absolute tolerance for csp analysis e.g., 1e-8 ", &csp_atolvar);
+  opts.set_option<bool>("use-yaml", "If true, use yaml to parse input file", &use_yaml);
   opts.set_option<double>("Acat", "Catalytic area [m2]", &Acat);
   opts.set_option<double>("Vol", "Reactor Volumen [m3]", &Vol);
   opts.set_option<double>("mdotIn", "Inlet mass flow rate [kg/s]", &mdotIn);
@@ -106,7 +108,8 @@ int main(int argc, char *argv[]) {
     }
     ChemElemTCSTR_TChem  model(chemFile, chemSurfFile,
                                  thermFile,  thermSurfFile,
-                                 number_of_algebraic_constraints );
+                                 number_of_algebraic_constraints,
+                                 use_yaml );
     //
     //set dimension of _state_vec, _source_vec,  and  _jmat
     model.init();

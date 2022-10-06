@@ -75,6 +75,34 @@ void CSPKernelBatch::freeEigenvaluesImagPartView(){
   _eigenvalues_imag_part_need_sync = NoNeedSync;
 }
 
+void CSPKernelBatch::evalEigenSolution(Tines::control_type& control)
+{
+  Tines::ProfilingRegionScope region("CSPlib::evalEigenSolution");
+  const int wlen = 3 * _n_variables * _n_variables + 2 * _n_variables;
+  real_type_2d_view work_eigensolver("work eigen solver", _nBatch, wlen);
+
+  const bool use_tpl_if_avail(true);
+  const bool compute_and_sort_eigenpairs = true;
+
+  createA_View();
+  createEigenvaluesRealPartView();
+  createEigenvaluesImagPartView();
+  Kokkos::fence();
+
+  Tines::SolveEigenvaluesNonSymmetricProblemDevice<exec_space>
+       ::invoke( exec_space(), _Jacobian, _eigenvalues_real_part._dev,
+                _eigenvalues_imag_part._dev, _A._dev, work_eigensolver,
+                 control);
+
+  _A_need_sync = NeedSyncToHost;
+  _eigenvalues_real_part_need_sync = NeedSyncToHost;
+  _eigenvalues_imag_part_need_sync = NeedSyncToHost;
+
+  work_eigensolver =  real_type_2d_view();
+
+}
+
+
 void CSPKernelBatch::evalEigenSolution(const ordinal_type& team_size,
                                        const ordinal_type& vector_size)
 {
@@ -93,9 +121,9 @@ void CSPKernelBatch::evalEigenSolution(const ordinal_type& team_size,
   Tines::control_type control;
   /// tpl use
   control["Bool:UseTPL"].bool_value = use_tpl_if_avail;
+  control["Bool:SolveEigenvaluesNonSymmetricProblem:Sort"].bool_value = compute_and_sort_eigenpairs;
   /// eigen solve
   if ( team_size > 0 && vector_size > 0) {
-    control["Bool:SolveEigenvaluesNonSymmetricProblem:Sort"].bool_value = compute_and_sort_eigenpairs;
     control["IntPair:Hessenberg:TeamSize"].int_pair_value = std::pair<int,int>(team_size,vector_size);
     control["IntPair:RightEigenvectorSchur:TeamSize"].int_pair_value = std::pair<int,int>(team_size,vector_size);
     control["IntPair:Gemm:TeamSize"].int_pair_value = std::pair<int,int>(team_size,vector_size);

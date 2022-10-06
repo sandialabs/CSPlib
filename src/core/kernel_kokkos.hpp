@@ -141,7 +141,7 @@ evalM(const MemberType &member,
   // 1  conservation of enthalpy for adiabatic systems
   const ordinal_type nvars(state_vector.extent(0));
   const real_type one(1.);
-  ordinal_type MaxExM = nElem > 0 ? nvars - nElem -1 : nvars ;
+  ordinal_type MaxExM = nElem < 0 ? nvars : nvars - nElem -1  ;
 
   NofDM=-1;
 
@@ -212,7 +212,7 @@ evalM(const MemberType &member,
 
 
   } // end searching M in each variable
-  
+
   // if searching loop does not find M
   if (NofDM == -1 )
     NofDM = nvars < MaxExM ? nvars : MaxExM ;

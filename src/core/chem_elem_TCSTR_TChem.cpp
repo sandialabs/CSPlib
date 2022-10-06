@@ -35,7 +35,8 @@ ChemElemTCSTR_TChem::ChemElemTCSTR_TChem(
                 const std::string &mech_surf_file    ,
                 const std::string &thermo_gas_file   ,
                 const std::string &thermo_surf_file ,
-                const int& Nalgebraic_constraints )
+                const int& Nalgebraic_constraints,
+                const bool  use_yaml  )
 
 {
 
@@ -44,15 +45,19 @@ ChemElemTCSTR_TChem::ChemElemTCSTR_TChem(
     TChem::     exec_space::print_configuration(std::cout, detail);
     TChem::host_exec_space::print_configuration(std::cout, detail);
 
-    kmdSurf = TChem::KineticModelData(mech_gas_file, thermo_gas_file,
-                                      mech_surf_file, thermo_surf_file);
+    if (use_yaml) {
+      kmd = TChem::KineticModelData(mech_gas_file, true);
+    } else {
+      kmd = TChem::KineticModelData(mech_gas_file, thermo_gas_file, mech_surf_file, thermo_surf_file);
+    }
+
     // create tchem object in device
-    kmcd = TChem::createGasKineticModelConstData<device_type>(kmdSurf);// data struc with gas phase info
-    kmcdSurf = TChem::createSurfaceKineticModelConstData<device_type>(kmdSurf);// data struc with surface phase info
+    kmcd = TChem::createGasKineticModelConstData<device_type>(kmd);// data struc with gas phase info
+    kmcdSurf = TChem::createSurfaceKineticModelConstData<device_type>(kmd);// data struc with surface phase info
 
     // create also a copy for host
-    kmcd_host = TChem::createGasKineticModelConstData<host_device_type>(kmdSurf); // data struc with gas phase info
-    kmcdSurf_host = TChem::createSurfaceKineticModelConstData<host_device_type>(kmdSurf);// data struc with surface phase info
+    kmcd_host = TChem::createGasKineticModelConstData<host_device_type>(kmd); // data struc with gas phase info
+    kmcdSurf_host = TChem::createSurfaceKineticModelConstData<host_device_type>(kmd);// data struc with surface phase info
 
     _Ngas_species = kmcd.nSpec;
     _Nsurface_species = kmcdSurf.nSpec;

@@ -8,9 +8,15 @@ set ( SRCS "run_index_TCSTR_TChem.cpp" )
 add_executable( ${EXEC}  ${SRCS} )
 target_link_libraries( ${EXEC} ${CSPlib_LINK_LIBRARIES} )
 
+set ( EXEC "runTCSTRI_TChem.exe" )
+set ( SRCS "runTCSTRI_TChem.cpp" )
+
+add_executable( ${EXEC}  ${SRCS} )
+target_link_libraries( ${EXEC} ${CSPlib_LINK_LIBRARIES} )
 
 SET(copy_EXE_FILES
     run_index_TCSTR_TChem.exe
+    runTCSTRI_TChem.exe
    )
 
 SET(copy_OTHER_FILES
