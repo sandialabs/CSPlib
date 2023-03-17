@@ -42,8 +42,8 @@ ChemElemTCSTR_TChem::ChemElemTCSTR_TChem(
 
     _nBatch = 1;
     const bool detail = false;
-    TChem::     exec_space::print_configuration(std::cout, detail);
-    TChem::host_exec_space::print_configuration(std::cout, detail);
+    TChem::     exec_space().print_configuration(std::cout, detail);
+    TChem::host_exec_space().print_configuration(std::cout, detail);
 
     if (use_yaml) {
       kmd = TChem::KineticModelData(mech_gas_file, true);
