@@ -40,8 +40,8 @@ InterfaceTChem::InterfaceTChem(
     _nBatch = 1;
     // TChem::KineticModelDta kmd;
     const bool detail = false;
-    TChem::     exec_space::print_configuration(std::cout, detail);
-    TChem::host_exec_space::print_configuration(std::cout, detail);
+    TChem::     exec_space().print_configuration(std::cout, detail);
+    TChem::host_exec_space().print_configuration(std::cout, detail);
 
     kmdSurf = TChem::KineticModelData(mech_gas_file,  thermo_gas_file,
                                       mech_surf_file, thermo_surf_file);

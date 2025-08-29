@@ -11,18 +11,19 @@
 # JFLAG is for makefile compilation on multiple cores, here 4
 # if CUDA="ON", make sure nvcc is in your system PATH
 
-MY_CC=/usr/bin/gcc
-MY_CXX=/usr/bin/g++
-MY_FC=/usr/bin/gfortran
-JFLAG="-j 4"
-CUDA="OFF"
+MY_CC=gcc
+MY_CXX=g++
+MY_FC=gfortran
+JFLAG="-j 40"
+CUDA="ON"
 
 # will clone repos under REPO_BASE
 # will build under BUILD_BASE
 # will install under INSTALL_BASE
 # example: as follows under .
 
-REPO_BASE=${PWD}/repos
+
+REPO_BASE=${PWD}/
 BUILD_BASE=${PWD}/build
 INSTALL_BASE=${PWD}/install
 
@@ -37,14 +38,6 @@ INSTALL_BASE=${PWD}/install
 #    export LIBRARY_PATH="${LIBRARY_PATH}:${OPENBLAS_INSTALL_PATH}/lib"
 # on linux need this
 #    export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${OPENBLAS_INSTALL_PATH}/lib"
-
-get_openblas (){
-echo "get OpenBLAS:"
-if [ -d "${OPENBLAS_REPOSITORY_PATH}" ] && [ "$(ls -A ${OPENBLAS_REPOSITORY_PATH})" ]; then
-  echo "${OPENBLAS_REPOSITORY_PATH} exists and is not empty ... aborting clone"; return
-fi
-git clone https://github.com/xianyi/OpenBLAS          ${OPENBLAS_REPOSITORY_PATH}
-}
 
 clean_openblas (){
 echo "Cleaning OpenBLAS:"
@@ -67,14 +60,6 @@ make CC=${MY_CC} FC=${MY_FC} HOSTCC=${MY_CC} PREFIX=${OPENBLAS_INSTALL_PATH} ins
 
 #=======================================================================================
 # kokkos
-get_kokkos (){
-echo "get kokkos:"
-if [ -d "${KOKKOS_REPOSITORY_PATH}" ] && [ "$(ls -A ${KOKKOS_REPOSITORY_PATH})" ]; then
-  echo "${KOKKOS_REPOSITORY_PATH} exists and is not empty ... aborting clone"; return
-fi
-git clone https://github.com/kokkos/kokkos            ${KOKKOS_REPOSITORY_PATH}
-}
-
 build_install_kokkos(){
 echo "Building kokkos:"
 mkdir ${KOKKOS_BUILD_PATH}
@@ -98,13 +83,6 @@ make ${JFLAG} install
 
 #=======================================================================================
 # gtest
-get_gtest (){
-echo "get gtest:"
-if [ -d "${GTEST_REPOSITORY_PATH}" ] && [ "$(ls -A ${GTEST_REPOSITORY_PATH})" ]; then
-  echo "${GTEST_REPOSITORY_PATH} exists and is not empty ... aborting clone"; return
-fi
-git clone https://github.com/google/googletest.git ${GTEST_REPOSITORY_PATH}
-}
 
 build_install_gtest(){
 echo "Building gtest:"
@@ -121,13 +99,6 @@ make ${JFLAG} install
 
 #=======================================================================================
 # Tines
-get_tines (){
-echo "get Tines:"
-if [ -d "${TINES_REPOSITORY_PATH}" ] && [ "$(ls -A ${TINES_REPOSITORY_PATH})" ]; then
-  echo "${TINES_REPOSITORY_PATH} exists and is not empty ... aborting clone"; return
-fi
-git clone https://github.com/sandialabs/Tines         ${TINES_REPOSITORY_PATH}
-}
 
 build_install_tines(){
 echo "Building tines:"
@@ -158,13 +129,6 @@ make ${JFLAG} install
 
 #=======================================================================================
 # TChem
-get_tchem (){
-echo "get TChem:"
-if [ -d "${TCHEM_REPOSITORY_PATH}" ] && [ "$(ls -A ${TCHEM_REPOSITORY_PATH})" ]; then
-  echo "${TCHEM_REPOSITORY_PATH} exists and is not empty ... aborting clone"; return
-fi
-git clone https://github.com/sandialabs/TChem         ${TCHEM_REPOSITORY_PATH}
-}
 
 build_install_tchem(){
 echo "Building TChem:"
@@ -191,13 +155,6 @@ make ${JFLAG} install
 
 #=======================================================================================
 # CSPlib
-get_csp (){
-echo "get CSPlib:"
-if [ -d "${CSPlib_REPOSITORY_PATH}" ] && [ "$(ls -A ${CSPlib_REPOSITORY_PATH})" ]; then
-  echo "${CSPlib_REPOSITORY_PATH} exists and is not empty ... aborting clone"; return
-fi
-git clone https://github.com/sandialabs/CSPlib        ${CSPlib_REPOSITORY_PATH}
-}
 
 build_install_csp(){
 echo "Building CSPlib:"
@@ -219,13 +176,6 @@ cmake \
 make ${JFLAG} install
 }
 # yaml 
-get_yaml (){
-echo "get gtest:"
-if [ -d "${YAML_REPOSITORY_PATH}" ] && [ "$(ls -A ${YAML_REPOSITORY_PATH})" ]; then
-  echo "${YAML_REPOSITORY_PATH} exists and is not empty ... aborting clone"; return
-fi
-git clone -b yaml-cpp-0.6.3 https://github.com/jbeder/yaml-cpp.git ${YAML_REPOSITORY_PATH}
-}
 
 build_install_yaml(){
 echo "Building gtest:"
@@ -245,19 +195,34 @@ make ${JFLAG} install
 #=======================================================================================
 #=======================================================================================
 # main
+## clone repo
+
 
 mkdir -p ${REPO_BASE}
 mkdir -p ${BUILD_BASE}
 mkdir -p ${INSTALL_BASE}
 
-OPENBLAS_REPOSITORY_PATH=${REPO_BASE}/openblas
+git clone https://github.com/sandialabs/CSPlib.git
+CSPlib_REPOSITORY_PATH=${REPO_BASE}/CSPlib
+## Getting submodules
+echo "Getting submodules..."
+cd ${CSPlib_REPOSITORY_PATH}
+git switch csplib-kokkos4.1
+##  git submodules: It does not work in main branch yet. 
+git submodule update --init --recursive
+
+TCHEM_REPOSITORY_PATH=${CSPlib_REPOSITORY_PATH}/ext/TChem
+TINES_REPOSITORY_PATH=${TCHEM_REPOSITORY_PATH}/ext/Tines
+KOKKOS_REPOSITORY_PATH=${TINES_REPOSITORY_PATH}/ext/kokkos
+OPENBLAS_REPOSITORY_PATH=${TINES_REPOSITORY_PATH}/ext/OpenBLAS
+GTEST_REPOSITORY_PATH=${TINES_REPOSITORY_PATH}/ext/gtest
+YAML_REPOSITORY_PATH=${TINES_REPOSITORY_PATH}/ext/yaml
+
 OPENBLAS_INSTALL_PATH=${INSTALL_BASE}/openblas
-get_openblas
 #clean_openblas
 build_openblas
 install_openblas
 #
-KOKKOS_REPOSITORY_PATH=${REPO_BASE}/kokkos
 KOKKOS_BUILD_PATH=${BUILD_BASE}/kokkos
 KOKKOS_INSTALL_PATH=${INSTALL_BASE}/kokkos
 if [ "${CUDA}" = "ON" ]; then
@@ -267,37 +232,26 @@ else
     KOKKOS_CXX_COMPILER="${MY_CXX}"
     KOKKOS_CXX_REPO_COMPILER="${MY_CXX}"
 fi
-get_kokkos
 build_install_kokkos
 
-GTEST_REPOSITORY_PATH=${REPO_BASE}/gtest
 GTEST_BUILD_PATH=${BUILD_BASE}/gtest
 GTEST_INSTALL_PATH=${INSTALL_BASE}/gtest
-get_gtest
 build_install_gtest
 
-YAML_REPOSITORY_PATH=${REPO_BASE}/yaml
 YAML_BUILD_PATH=${BUILD_BASE}/yaml
 YAML_INSTALL_PATH=${INSTALL_BASE}/yaml
-get_yaml
 build_install_yaml
 
-TINES_REPOSITORY_PATH=${REPO_BASE}/tines
 TINES_BUILD_PATH=${BUILD_BASE}/tines
 TINES_INSTALL_PATH=${INSTALL_BASE}/tines
-get_tines
 build_install_tines
 
-TCHEM_REPOSITORY_PATH=${REPO_BASE}/tchem
 TCHEM_BUILD_PATH=${BUILD_BASE}/tchem
 TCHEM_INSTALL_PATH=${INSTALL_BASE}/tchem
-get_tchem
 build_install_tchem
 
-CSPlib_REPOSITORY_PATH=${REPO_BASE}/csplib
 CSPlib_BUILD_PATH=${BUILD_BASE}/csplib
 CSPlib_INSTALL_PATH=${INSTALL_BASE}/csplib
-get_csp
 build_install_csp
 
 exit

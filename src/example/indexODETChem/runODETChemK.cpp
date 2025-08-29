@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
   opts.set_option<bool>(
       "write-files", "If true, write output files", &write_files);
   opts.set_option<std::string>
-  ("device-seeting-file", "Device setting file name e.g., csp_device_settings.yaml", &csp_device_settings);
+  ("file-yaml", "Device setting file name e.g., csp_device_settings.yaml", &csp_device_settings);
   opts.set_option<bool>(
       "use-device-setting-file", "If true, read settings for Device from a the yaml file csp_device_settings.yaml", &use_yaml_settings_file);
   opts.set_option<bool>(
