@@ -207,8 +207,6 @@ CSPlib_REPOSITORY_PATH=${REPO_BASE}/CSPlib
 ## Getting submodules
 echo "Getting submodules..."
 cd ${CSPlib_REPOSITORY_PATH}
-git switch csplib-kokkos4.1
-##  git submodules: It does not work in main branch yet. 
 git submodule update --init --recursive
 
 TCHEM_REPOSITORY_PATH=${CSPlib_REPOSITORY_PATH}/ext/TChem
