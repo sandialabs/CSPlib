@@ -3,8 +3,8 @@ CSPlib version 1.1.0
 Copyright (2021) NTESS
 https://github.com/sandialabs/csplib
 
-Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS). 
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains 
+Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
 certain rights in this software.
 
 This file is part of CSPlib. CSPlib is open-source software: you can redistribute it
@@ -329,14 +329,14 @@ int main(int argc, char *argv[]) {
 
     /* Temperature */
     /* Slow importance index  */
-    const int indxTemp = model.getVarIndex(variable1) ;
+    const int indx_var1 = model.getVarIndex(variable1) ;
     std::string Top_rop_file_name = firstname + "_" +variable1+"_SlowImportanceIndexTopElemPosition.dat";
     FILE *fout_Top_rop = fopen ( (Top_rop_file_name).c_str(), "w" );
     std::vector<int> IndxList;
 
     std::vector<double> Islow_k;
-    std::string SlowIndVar0_file_name = firstname + "_" + variable1+ "_SlowImportanceIndex.dat";
-    FILE *fout_SlowIndVar0 = fopen ( (SlowIndVar0_file_name).c_str(), "w" );
+    std::string SlowIndvar1_file_name = firstname + "_" + variable1+ "_SlowImportanceIndex.dat";
+    FILE *fout_SlowIndvar1 = fopen ( (SlowIndvar1_file_name).c_str(), "w" );
 
     /*Fast importance index  */
     std::string Top_fast_rop_file_name = firstname + "_" +variable1+ "_FastImportanceIndexTopElemPosition.dat";
@@ -344,27 +344,27 @@ int main(int argc, char *argv[]) {
     std::vector<int> IndxListFast;
 
     std::vector<double> Ifast_k;
-    std::string FastIndVar0_file_name = firstname +"_" + variable1+  "_FastImportanceIndex.dat";
-    FILE *fout_FastIndVar0 = fopen ( (FastIndVar0_file_name).c_str(), "w" );
+    std::string FastIndvar1_file_name = firstname +"_" + variable1+  "_FastImportanceIndex.dat";
+    FILE *fout_FastIndvar1 = fopen ( (FastIndvar1_file_name).c_str(), "w" );
 
     /* Slow importance index  */
-    const int indxCH4 = model.getVarIndex(variable2) ;
-    std::string ch4_Slow_Top_rop_file_name = firstname + "_" +variable2+"_SlowImportanceIndexTopElemPosition.dat";
-    FILE *fout_Top_rop_ch4 = fopen ( (ch4_Slow_Top_rop_file_name).c_str(), "w" );
-    std::vector<int> IndxListch4;
+    const int indx_var2 = model.getVarIndex(variable2) ;
+    std::string var2_Slow_Top_rop_file_name = firstname + "_" +variable2+"_SlowImportanceIndexTopElemPosition.dat";
+    FILE *fout_Top_rop_var2 = fopen ( (var2_Slow_Top_rop_file_name).c_str(), "w" );
+    std::vector<int> IndxListvar2;
 
-    std::vector<double> Islow_k_ch4;
-    std::string Slowch4_file_name = firstname + "_" + variable2+ "_SlowImportanceIndex.dat";
-    FILE *fout_SlowIndch4 = fopen ( (Slowch4_file_name).c_str(), "w" );
+    std::vector<double> Islow_k_var2;
+    std::string Slowvar2_file_name = firstname + "_" + variable2+ "_SlowImportanceIndex.dat";
+    FILE *fout_SlowInd_var2 = fopen ( (Slowvar2_file_name).c_str(), "w" );
 
     /*Fast importance index  */
-    std::string ch4_Top_fast_rop_file_name = firstname + "_" +variable2+ "_FastImportanceIndexTopElemPosition.dat";
-    FILE *fout_Top_rop_fast_ch4 = fopen ( (ch4_Top_fast_rop_file_name).c_str(), "w" );
-    std::vector<int> IndxListFastch4;
+    std::string var2_Top_fast_rop_file_name = firstname + "_" +variable2+ "_FastImportanceIndexTopElemPosition.dat";
+    FILE *fout_Top_rop_fast_var2 = fopen ( (var2_Top_fast_rop_file_name).c_str(), "w" );
+    std::vector<int> IndxListFastvar2;
 
-    std::vector<double> Ifast_k_ch4;
-    std::string Fastch4_file_name =  firstname +"_" + variable2+  "_FastImportanceIndex.dat";
-    FILE *fout_FastIndch4 = fopen ( (Fastch4_file_name).c_str(), "w" );
+    std::vector<double> Ifast_k_var2;
+    std::string Fastvar2_file_name =  firstname +"_" + variable2+  "_FastImportanceIndex.dat";
+    FILE *fout_FastInd_var2 = fopen ( (Fastvar2_file_name).c_str(), "w" );
 
     const int nSample = state_db.size();
 
@@ -569,12 +569,12 @@ int main(int argc, char *argv[]) {
 
 
       /* eval and get slow importance index for one variable */
-      idx.evalAndGetImportanceIndexSlow(indxTemp, Islow_k);
-      idx.evalAndGetImportanceIndexSlow(indxCH4, Islow_k_ch4);
+      idx.evalAndGetImportanceIndexSlow(indx_var1, Islow_k);
+      idx.evalAndGetImportanceIndexSlow(indx_var2, Islow_k_var2);
 
       /* eval and get fast importance index for one variable */
-      idx.evalAndGetImportanceIndexFast(indxTemp, Ifast_k);
-      idx.evalAndGetImportanceIndexFast(indxCH4, Ifast_k_ch4);
+      idx.evalAndGetImportanceIndexFast(indx_var1, Ifast_k);
+      idx.evalAndGetImportanceIndexFast(indx_var2, Ifast_k_var2);
 
 
       /* get top rate of progess */
@@ -585,8 +585,8 @@ int main(int argc, char *argv[]) {
       idx.getTopIndex(Islow_k, Top_rop, threshold_rop,  IndxList );
       idx.getTopIndex(Ifast_k, Top_rop, threshold_rop,  IndxListFast );
 
-      idx.getTopIndex(Islow_k_ch4, Top_rop, threshold_rop,  IndxListch4 );
-      idx.getTopIndex(Ifast_k_ch4, Top_rop, threshold_rop,  IndxListFastch4 );
+      idx.getTopIndex(Islow_k_var2, Top_rop, threshold_rop,  IndxListvar2 );
+      idx.getTopIndex(Ifast_k_var2, Top_rop, threshold_rop,  IndxListFastvar2 );
 
 
 
@@ -684,14 +684,14 @@ int main(int argc, char *argv[]) {
 
       /* participation index for one mode or variable  */
       for (int j = 0; j<(nTotalReactions); j++ ) {
-        fprintf(fout_FastIndVar0,"%15.10e \t", Ifast_k[j]);
+        fprintf(fout_FastIndvar1,"%15.10e \t", Ifast_k[j]);
       }
-      fprintf(fout_FastIndVar0,"\n");
+      fprintf(fout_FastIndvar1,"\n");
 
       for (int j = 0; j<(nTotalReactions); j++ ) {
-        fprintf(fout_FastIndch4,"%15.10e \t", Ifast_k_ch4[j]);
+        fprintf(fout_FastInd_var2,"%15.10e \t", Ifast_k_var2[j]);
       }
-      fprintf(fout_FastIndch4,"\n");
+      fprintf(fout_FastInd_var2,"\n");
 
 
       for (int j = 0; j<(nTotalReactions); j++ ) {
@@ -700,14 +700,14 @@ int main(int argc, char *argv[]) {
       fprintf(fout_mode0,"\n");
 
       for (int j = 0; j<(nTotalReactions); j++ ) {
-        fprintf(fout_SlowIndVar0,"%15.10e \t", Islow_k[j]);
+        fprintf(fout_SlowIndvar1,"%15.10e \t", Islow_k[j]);
       }
-      fprintf(fout_SlowIndVar0,"\n");
+      fprintf(fout_SlowIndvar1,"\n");
 
       for (int j = 0; j<(nTotalReactions); j++ ) {
-        fprintf(fout_SlowIndch4,"%15.10e \t", Islow_k_ch4[j]);
+        fprintf(fout_SlowInd_var2,"%15.10e \t", Islow_k_var2[j]);
       }
-      fprintf(fout_SlowIndch4,"\n");
+      fprintf(fout_SlowInd_var2,"\n");
 
 
     } //end of samples
@@ -737,14 +737,14 @@ int main(int argc, char *argv[]) {
     fprintf(fout_Top_rop_fast,"\n");
 
     for (size_t j = 0; j< IndxList.size(); j++ ) {
-      fprintf(fout_Top_rop_ch4,"%d \t", IndxListch4[j]);
+      fprintf(fout_Top_rop_var2,"%d \t", IndxListvar2[j]);
     }
-    fprintf(fout_Top_rop_ch4,"\n");
+    fprintf(fout_Top_rop_var2,"\n");
 
     for (size_t j = 0; j< IndxListFast.size(); j++ ) {
-      fprintf(fout_Top_rop_fast_ch4,"%d \t", IndxListFastch4[j]);
+      fprintf(fout_Top_rop_fast_var2,"%d \t", IndxListFastvar2[j]);
     }
-    fprintf(fout_Top_rop_fast_ch4,"\n");
+    fprintf(fout_Top_rop_fast_var2,"\n");
 
     /* close files */
     // file with element position for RoP
@@ -753,8 +753,8 @@ int main(int argc, char *argv[]) {
     fclose(fout_Top_rop_part);
     fclose(fout_Top_var_cspp);
 
-    fclose(fout_Top_rop_ch4);
-    fclose(fout_Top_rop_fast_ch4);
+    fclose(fout_Top_rop_var2);
+    fclose(fout_Top_rop_fast_var2);
 
     // model class
     fclose(fout_jac);
@@ -780,10 +780,10 @@ int main(int argc, char *argv[]) {
 
     // file with mode 0, temperature and ch4
     fclose(fout_mode0);
-    fclose(fout_SlowIndVar0);
-    fclose(fout_FastIndVar0);
-    fclose(fout_FastIndch4);
-    fclose(fout_SlowIndch4);
+    fclose(fout_SlowIndvar1);
+    fclose(fout_FastIndvar1);
+    fclose(fout_FastInd_var2);
+    fclose(fout_SlowInd_var2);
     fclose(fout_cspp_mode0);
 
     // Kokkos::fence(); /// timing purpose
