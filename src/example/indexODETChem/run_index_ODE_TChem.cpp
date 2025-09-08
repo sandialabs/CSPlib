@@ -38,7 +38,7 @@ void readDataBase(const std::string& filename,
                   const int &nStateVariables)
 {
   double atposition;
-  printf("Reading from data base \n ");
+  printf("Reading from database \n ");
   std::string line;
   std::ifstream ixfs(filename);
   if (ixfs.is_open()) {
@@ -74,6 +74,8 @@ int main(int argc, char *argv[]) {
   bool useTChemSolution(true);
   bool verbose(false);
 
+  std::string variable1("Temperature");
+  std::string variable2("CH4");
   CSP::CommandLineParser opts("This example carries out a csp analysis with TChem model class");
   opts.set_option<std::string>("prefix", "prefix to save output files e.g., pos_ ", &firstname);
   opts.set_option<double>("rtol", "relative tolerance for csp analysis e.g., 1e-2 ", &csp_rtolvar);
@@ -93,6 +95,10 @@ int main(int argc, char *argv[]) {
    "Use a analytical jacobian; 0: hand-derived analytical jacobian, 1: numerical jacobian, other number: sacado Analytical jacobian  ", &use_analytical_Jacobian);
   opts.set_option<bool>(
       "verbose", "If true, printout state vector, jac ...", &verbose);
+  opts.set_option<std::string>
+  ("variable1", "Compute Importance index for variable  e.g., Temperature", &variable1);
+  opts.set_option<std::string>
+  ("variable2", "Compute Importance index for variable  e.g., CH4", &variable2);
 
   const bool r_parse = opts.parse(argc, argv);
   if (r_parse) return 0; // print help return
@@ -262,48 +268,44 @@ int main(int argc, char *argv[]) {
     std::string mode0_file_name = firstname + "_Mode0_ParticipationIndex.dat";
     FILE *fout_mode0 = fopen ( (mode0_file_name).c_str(), "w" );
 
-    /* Temperature */
-
-    std::string var_name = "Temperature";
-
+    /* variable 1 */
     /* Slow importance index  */
-    const int indxTemp = model.getVarIndex(var_name) ;
-    std::string Top_rop_file_name = firstname + "_" +var_name+"_SlowImportanceIndexTopElemPosition.dat";
+    const int indxTemp = model.getVarIndex(variable1) ;
+    std::string Top_rop_file_name = firstname + "_" +variable1+"_SlowImportanceIndexTopElemPosition.dat";
     FILE *fout_Top_rop = fopen ( (Top_rop_file_name).c_str(), "w" );
     std::vector<int> IndxList;
 
     std::vector<double> Islow_k;
-    std::string SlowIndVar0_file_name = firstname + "_" + var_name+ "_SlowImportanceIndex.dat";
+    std::string SlowIndVar0_file_name = firstname + "_" + variable1+ "_SlowImportanceIndex.dat";
     FILE *fout_SlowIndVar0 = fopen ( (SlowIndVar0_file_name).c_str(), "w" );
 
     /*Fast importance index  */
-    std::string Top_fast_rop_file_name = firstname + "_" +var_name+ "_FastImportanceIndexTopElemPosition.dat";
+    std::string Top_fast_rop_file_name = firstname + "_" +variable1+ "_FastImportanceIndexTopElemPosition.dat";
     FILE *fout_Top_rop_fast = fopen ( (Top_fast_rop_file_name).c_str(), "w" );
     std::vector<int> IndxListFast;
 
     std::vector<double> Ifast_k;
-    std::string FastIndVar0_file_name = firstname +"_" + var_name+  "_FastImportanceIndex.dat";
+    std::string FastIndVar0_file_name = firstname +"_" + variable1+  "_FastImportanceIndex.dat";
     FILE *fout_FastIndVar0 = fopen ( (FastIndVar0_file_name).c_str(), "w" );
 
-    var_name = "CH4";
 
     /* Slow importance index  */
-    const int indxCH4 = model.getVarIndex(var_name) ;
-    std::string ch4_Slow_Top_rop_file_name = firstname + "_" +var_name+"_SlowImportanceIndexTopElemPosition.dat";
+    const int indxCH4 = model.getVarIndex(variable2) ;
+    std::string ch4_Slow_Top_rop_file_name = firstname + "_" +variable2+"_SlowImportanceIndexTopElemPosition.dat";
     FILE *fout_Top_rop_ch4 = fopen ( (ch4_Slow_Top_rop_file_name).c_str(), "w" );
     std::vector<int> IndxListch4;
 
     std::vector<double> Islow_k_ch4;
-    std::string Slowch4_file_name = firstname + "_" + var_name+ "_SlowImportanceIndex.dat";
+    std::string Slowch4_file_name = firstname + "_" + variable2+ "_SlowImportanceIndex.dat";
     FILE *fout_SlowIndch4 = fopen ( (Slowch4_file_name).c_str(), "w" );
 
     /*Fast importance index  */
-    std::string ch4_Top_fast_rop_file_name = firstname + "_" +var_name+ "_FastImportanceIndexTopElemPosition.dat";
+    std::string ch4_Top_fast_rop_file_name = firstname + "_" +variable2+ "_FastImportanceIndexTopElemPosition.dat";
     FILE *fout_Top_rop_fast_ch4 = fopen ( (ch4_Top_fast_rop_file_name).c_str(), "w" );
     std::vector<int> IndxListFastch4;
 
     std::vector<double> Ifast_k_ch4;
-    std::string Fastch4_file_name =  firstname +"_" + var_name+  "_FastImportanceIndex.dat";
+    std::string Fastch4_file_name =  firstname +"_" + variable2+  "_FastImportanceIndex.dat";
     FILE *fout_FastIndch4 = fopen ( (Fastch4_file_name).c_str(), "w" );
 
     const int nSample = state_db.size();
