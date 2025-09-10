@@ -97,8 +97,6 @@ int main(int argc, char *argv[]) {
   bool useCloneSamples(false);
   bool use_yaml(false);
 
-  std::string variable1("Temperature");
-  std::string variable2("CH4");
 
 
   CSP::CommandLineParser opts("This example carries out a csp analysis with TChem model class");
@@ -133,10 +131,6 @@ int main(int argc, char *argv[]) {
   opts.set_option<bool>(
       "compute-csp-indices", "If true, computes fast/slow importances and participation indices", &compute_csp_indices);
   opts.set_option<int>("increment", " increment in database, e.g. 2  ", &increment);
-  opts.set_option<std::string>
-  ("variable1", "Compute Importance index for variable  e.g., Temperature", &variable1);
-  opts.set_option<std::string>
-  ("variable2", "Compute Importance index for variable  e.g., CH4", &variable2);
 
   const bool r_parse = opts.parse(argc, argv);
   if (r_parse) return 0; // print help return

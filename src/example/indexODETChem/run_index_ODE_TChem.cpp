@@ -606,12 +606,12 @@ int main(int argc, char *argv[]) {
     }
     fprintf(fout_Top_rop_fast,"\n");
 
-    for (size_t j = 0; j< IndxList.size(); j++ ) {
+    for (size_t j = 0; j< IndxListvar2.size(); j++ ) {
       fprintf(fout_Top_rop_var2,"%d \t", IndxListvar2[j]);
     }
     fprintf(fout_Top_rop_var2,"\n");
 
-    for (size_t j = 0; j< IndxListFast.size(); j++ ) {
+    for (size_t j = 0; j< IndxListFastvar2.size(); j++ ) {
       fprintf(fout_Top_rop_fast_var2,"%d \t", IndxListFastvar2[j]);
     }
     fprintf(fout_Top_rop_fast_var2,"\n");
